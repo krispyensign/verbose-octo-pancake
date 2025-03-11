@@ -12,7 +12,7 @@ public interface IQuoteService
 
 public class QuoteService(
     string baseURL,
-    ILogger logger) : IQuoteService
+    ILogger<IQuoteService> logger) : IQuoteService
 {
     private readonly string _baseURL = baseURL ??
         throw new ArgumentNullException(nameof(baseURL));

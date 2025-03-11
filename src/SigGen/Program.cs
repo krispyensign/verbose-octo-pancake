@@ -1,14 +1,16 @@
+using Microsoft.Extensions.DependencyInjection;
 using SigGen.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// build a logger
-using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
-ILogger logger = factory.CreateLogger("Program");
-
 // Add services to the container.
-builder.Services.AddSingleton<IQuoteService>(_ => new QuoteService(
-    "https://www.example.com", logger));
+builder.Services.AddLogging(builder => builder.AddConsole());
+builder.Services.AddSingleton<IQuoteService>(s => {
+    var logger = s.GetRequiredService<ILogger<IQuoteService>>();
+    return new QuoteService(
+        "https://www.example.com", 
+        logger);
+});
 builder.Services.AddRazorPages();
 
 var app = builder.Build();
