@@ -1,0 +1,90 @@
+{
+    "requestId": "f8ab2ee8-b984-4b14-ac71-5b2679bc9352",
+    "routing": "CLASSIC",
+    "quote": {
+        "chainId": 8453,
+        "input": {
+            "amount": "1000000000000000000",
+            "token": "0x0000000000000000000000000000000000000000"
+        },
+        "output": {
+            "amount": "2368994",
+            "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+            "recipient": "0xAAAA44272dc658575Ba38f43C438447dDED45358"
+        },
+        "swapper": "0xAAAA44272dc658575Ba38f43C438447dDED45358",
+        "route": [
+            [
+                {
+                    "type": "v3-pool",
+                    "address": "0x7AeA2E8A3843516afa07293a10Ac8E49906dabD1",
+                    "tokenIn": {
+                        "chainId": 8453,
+                        "decimals": "18",
+                        "address": "0x4200000000000000000000000000000000000006",
+                        "symbol": "WETH"
+                    },
+                    "tokenOut": {
+                        "chainId": 8453,
+                        "decimals": "8",
+                        "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+                        "symbol": "cbBTC"
+                    },
+                    "fee": "500",
+                    "liquidity": "8828539452901131",
+                    "sqrtRatioX96": "121972319016107727015570",
+                    "tickCurrent": "-267695",
+                    "amountIn": "1000000000000000000",
+                    "amountOut": "2363071"
+                }
+            ]
+        ],
+        "slippage": 2.5,
+        "tradeType": "EXACT_INPUT",
+        "quoteId": "3517a714-ad9c-4934-9ab2-5f6342b38191",
+        "gasFeeUSD": "0.005808",
+        "gasFeeQuote": "7",
+        "gasUseEstimate": "124938",
+        "priceImpact": 0.3,
+        "txFailureReasons": [],
+        "gasPrice": "4500667",
+        "gasFee": "4985143369248",
+        "gasEstimates": [
+            {
+                "type": "legacy",
+                "strategy": {
+                    "limitInflationFactor": 1.15,
+                    "priceInflationFactor": 1.5,
+                    "percentileThresholdFor1559Fee": 75,
+                    "minPriorityFeeGwei": 2,
+                    "maxPriorityFeeGwei": 9
+                },
+                "gasLimit": "124938",
+                "gasFee": "4985143369248",
+                "gasPrice": "4500667"
+            }
+        ],
+        "routeString": "[V3] 100.00% = WETH -- 0.05% [0x7AeA2E8A3843516afa07293a10Ac8E49906dabD1]cbBTC",
+        "blockNumber": "27424183",
+        "aggregatedOutputs": [
+            {
+                "amount": "2363072",
+                "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+                "recipient": "0xAAAA44272dc658575Ba38f43C438447dDED45358",
+                "bps": 9975,
+                "minAmount": "2363072"
+            },
+            {
+                "amount": "5922",
+                "token": "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+                "recipient": "0x5d64D14D2CF4fe5fe4e65B1c7E3D11e18D493091",
+                "bps": 25,
+                "minAmount": "5922"
+            }
+        ],
+        "portionAmount": "5922",
+        "portionBips": 25,
+        "portionRecipient": "0x5d64D14D2CF4fe5fe4e65B1c7E3D11e18D493091"
+    },
+    "permitData": null
+}
