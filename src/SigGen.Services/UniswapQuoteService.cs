@@ -49,7 +49,8 @@ public class UniswapQuoteService : IQuoteService
             JsonSerializer.Serialize(request),
             Encoding.UTF8,
             "application/json");
-        using HttpResponseMessage response = await _httpClient.PostAsync(_configuration.Path, jsonContent, cancellationToken);
+        using HttpResponseMessage response =
+            await _httpClient.PostAsync(_configuration.Path, jsonContent, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(cancellationToken);
