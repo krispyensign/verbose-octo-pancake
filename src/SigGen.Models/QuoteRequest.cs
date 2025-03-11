@@ -1,6 +1,6 @@
 namespace SigGen.Models;
 
-public class SwapRequest {
+public class QuoteRequest {
     public required string Amount { get; set; }
     public required SortedDictionary<int, GasStrategy> GasStrategies { get; set; }
     public List<string> Protocols { get; set; } = [
