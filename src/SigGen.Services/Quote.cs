@@ -1,6 +1,7 @@
 ﻿namespace SigGen.Service;
 
-public class Swap
+
+public class Quote
 {
 
 }

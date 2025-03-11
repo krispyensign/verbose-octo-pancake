@@ -15,8 +15,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{0C88DD14-F
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SigGen.Tests", "test\SigGen.Tests\SigGen.Tests.csproj", "{D7FE9E65-56BC-407D-AA63-64A401CBFE86}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SigGen.Service", "src\SigGen.Service\SigGen.Service.csproj", "{2E770168-CADB-4BC4-B742-458C46140C4D}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
