@@ -20,6 +20,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\SigGen.Models\SigGen.Models.csproj" />
+    <ProjectReference Include="..\SigGen.Service\SigGen.Service.csproj" />
   </ItemGroup>
 
 </Project>
