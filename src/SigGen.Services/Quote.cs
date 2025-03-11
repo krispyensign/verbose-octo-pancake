@@ -54,6 +54,7 @@ public class QuoteService(
             } catch {
                 Console.WriteLine(msg);
             }
+
             throw new InvalidOperationException(msg);
         }
 
