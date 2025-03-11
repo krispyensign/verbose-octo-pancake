@@ -8,7 +8,7 @@ builder.Services.AddLogging(builder => builder.AddConsole());
 builder.Services.AddSingleton<IQuoteService>(s => {
     var logger = s.GetRequiredService<ILogger<IQuoteService>>();
     return new QuoteService(
-        "https://www.example.com", 
+        "https://trading-api-labs.interface.gateway.uniswap.org", 
         logger);
 });
 builder.Services.AddRazorPages();

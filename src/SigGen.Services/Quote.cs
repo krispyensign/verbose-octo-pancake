@@ -1,4 +1,6 @@
 ﻿using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using SigGen.Models;
 namespace SigGen.Services;
@@ -22,7 +24,7 @@ public class QuoteService(
     {
         BaseAddress = new Uri(baseURL)
     };
-    private const string quotePath = "";
+    private const string quotePath = "v1/quote";
 
     public async Task<string> GetQuote(
         string amount, string tokenIn, string tokenOut,
@@ -40,8 +42,11 @@ public class QuoteService(
             },
         };
 
-        var content = JsonContent.Create(request);
-        using HttpResponseMessage response = await _httpClient.PostAsJsonAsync(quotePath, content, cancellationToken);
+        using StringContent jsonContent = new(
+            JsonSerializer.Serialize(request),
+            Encoding.UTF8,
+            "application/json");
+        using HttpResponseMessage response = await _httpClient.PostAsync(quotePath, jsonContent, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(cancellationToken);
