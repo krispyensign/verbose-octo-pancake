@@ -28,6 +28,7 @@ public class QuoteService(
         string amount, string tokenIn, string tokenOut,
         CancellationToken cancellationToken = default)
     {
+        _logger.BeginScope(nameof(QuoteService));
         var request = new QuoteRequest
         {
             Amount = amount,
@@ -46,7 +47,14 @@ public class QuoteService(
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(cancellationToken);
         if (quoteResponse?.Quote?.Output?.Amount == null)
         {
-            throw new InvalidOperationException("quote amount response was null");
+            var msg ="quote amount response was null.";
+            try {
+                _logger.LogInformation(quoteResponse?.ToString());
+                _logger.LogError(msg);
+            } catch {
+                Console.WriteLine(msg);
+            }
+            throw new InvalidOperationException(msg);
         }
 
         return quoteResponse.Quote.Output.Amount;
