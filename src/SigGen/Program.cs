@@ -2,11 +2,13 @@ using SigGen.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// build a logger
+using ILoggerFactory factory = LoggerFactory.Create(builder => builder.AddConsole());
+ILogger logger = factory.CreateLogger("Program");
+
 // Add services to the container.
 builder.Services.AddSingleton<IQuoteService>(_ => new QuoteService(
-    "www.example.com"
-));
-builder.Services.AddSingleton<ILogger, Logger<IQuoteService>>();
+    "https://www.example.com", logger));
 builder.Services.AddRazorPages();
 
 var app = builder.Build();

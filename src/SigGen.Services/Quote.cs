@@ -1,6 +1,6 @@
 ﻿using System.Net.Http.Json;
+using Microsoft.Extensions.Logging;
 using SigGen.Models;
-
 namespace SigGen.Services;
 
 public interface IQuoteService
@@ -10,10 +10,14 @@ public interface IQuoteService
         CancellationToken cancellationToken = default);
 }
 
-public class QuoteService(string baseURL) : IQuoteService
+public class QuoteService(
+    string baseURL,
+    ILogger logger) : IQuoteService
 {
     private readonly string _baseURL = baseURL ??
         throw new ArgumentNullException(nameof(baseURL));
+    private readonly ILogger _logger = logger ??
+        throw new ArgumentNullException(nameof(logger));
     private readonly HttpClient _httpClient = new()
     {
         BaseAddress = new Uri(baseURL)
