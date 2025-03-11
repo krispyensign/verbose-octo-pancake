@@ -1,10 +1,4 @@
-﻿using System.Net.Http.Json;
-using System.Text;
-using System.Text.Json;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using SigGen.Models;
-namespace SigGen.Services;
+﻿namespace SigGen.Services;
 
 public interface IQuoteService
 {
