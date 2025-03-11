@@ -1,6 +1,12 @@
+using SigGen.Services;
+
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
+builder.Services.AddSingleton<IQuoteService>(_ => new QuoteService(
+    "www.example.com"
+));
+builder.Services.AddSingleton<ILogger, Logger<IQuoteService>>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();

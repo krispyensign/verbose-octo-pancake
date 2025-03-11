@@ -3,14 +3,14 @@ using SigGen.Models;
 
 namespace SigGen.Services;
 
-public interface IQuote
+public interface IQuoteService
 {
     Task<string> GetQuote(
         string amount, string tokenIn, string tokenOut,
         CancellationToken cancellationToken = default);
 }
 
-public class Quote(string baseURL) : IQuote
+public class QuoteService(string baseURL) : IQuoteService
 {
     private readonly string _baseURL = baseURL ??
         throw new ArgumentNullException(nameof(baseURL));
