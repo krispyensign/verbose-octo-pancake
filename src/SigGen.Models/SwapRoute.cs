@@ -1,14 +1,14 @@
 namespace SigGen.Models;
 
 public class SwapRoute {
-    string Type { get; set; }
-    string Address { get; set; }
-    TokenInfo TokenIn { get; set; }
-    TokenInfo TokenOut { get; set; }
-    string Fee { get; set; }
-    string Liquidity { get; set; }
-    string SqrtRatioX96 { get; set; }
-    string TickCurrent { get; set; }
-    string AmountIn { get; set; }
-    string AmountOut { get; set; }
+    public string? Type { get; set; }
+    public string? Address { get; set; }
+    public TokenInfo? TokenIn { get; set; }
+    public TokenInfo? TokenOut { get; set; }
+    public string? Fee { get; set; }
+    public string? Liquidity { get; set; }
+    public string? SqrtRatioX96 { get; set; }
+    public string? TickCurrent { get; set; }
+    public string? AmountIn { get; set; }
+    public string? AmountOut { get; set; }
 }

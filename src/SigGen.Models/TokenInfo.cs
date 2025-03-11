@@ -1,8 +1,8 @@
 namespace SigGen.Models;
 
 public class TokenInfo {
-   int ChainId { get; set; } 
-   string Decimals { get; set; }
-   string Address { get; set; }
-   string Symbol { get; set; }
+   public int ChainId { get; set; } 
+   public string? Decimals { get; set; }
+   public string? Address { get; set; }
+   public string? Symbol { get; set; }
 }
