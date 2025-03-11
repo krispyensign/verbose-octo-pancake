@@ -18,4 +18,8 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\SigGen.Models\SigGen.Models.csproj" />
+  </ItemGroup>
+
 </Project>
