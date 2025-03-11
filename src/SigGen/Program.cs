@@ -5,12 +5,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddLogging(builder => builder.AddConsole());
-builder.Services.AddSingleton<IQuoteService>(s => {
-    var logger = s.GetRequiredService<ILogger<IQuoteService>>();
-    return new QuoteService(
-        "https://trading-api-labs.interface.gateway.uniswap.org", 
-        logger);
-});
+builder.Services.AddSingleton<IQuoteService, UniswapQuoteService>();
 builder.Services.AddRazorPages();
 
 var app = builder.Build();

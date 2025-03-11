@@ -1,36 +1,39 @@
-﻿using System.Net.Http.Json;
+
+using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SigGen.Models;
 namespace SigGen.Services;
 
-public interface IQuoteService
+public class UniswapQuoteService : IQuoteService
 {
-    Task<string> GetQuote(
-        string amount, string tokenIn, string tokenOut,
-        CancellationToken cancellationToken = default);
-}
+    private QuoteConfiguration _configuration;
 
-public class QuoteService(
-    string baseURL,
-    ILogger<IQuoteService> logger) : IQuoteService
-{
-    private readonly string _baseURL = baseURL ??
-        throw new ArgumentNullException(nameof(baseURL));
-    private readonly ILogger _logger = logger ??
-        throw new ArgumentNullException(nameof(logger));
-    private readonly HttpClient _httpClient = new()
+    private ILogger _logger;
+
+    private HttpClient _httpClient;
+
+    public UniswapQuoteService(IConfiguration configuration, ILogger logger)
     {
-        BaseAddress = new Uri(baseURL)
-    };
-    private const string quotePath = "v1/quote";
+        _configuration = configuration?.GetValue<QuoteConfiguration>("Quote")
+            ?? throw new ArgumentNullException(nameof(configuration));
+
+        _logger = logger 
+            ?? throw new ArgumentNullException(nameof(logger));
+
+        _httpClient = new()
+        {
+            BaseAddress = new Uri(_configuration.BaseAddress)
+        };
+    }
 
     public async Task<string> GetQuote(
         string amount, string tokenIn, string tokenOut,
         CancellationToken cancellationToken = default)
     {
-        _logger.BeginScope(nameof(QuoteService));
+        _logger.BeginScope(nameof(UniswapQuoteService));
         var request = new QuoteRequest
         {
             Amount = amount,
@@ -46,7 +49,7 @@ public class QuoteService(
             JsonSerializer.Serialize(request),
             Encoding.UTF8,
             "application/json");
-        using HttpResponseMessage response = await _httpClient.PostAsync(quotePath, jsonContent, cancellationToken);
+        using HttpResponseMessage response = await _httpClient.PostAsync(_configuration.Path, jsonContent, cancellationToken);
         response.EnsureSuccessStatusCode();
 
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(cancellationToken);
