@@ -9,11 +9,11 @@ namespace SigGen.Services;
 
 public class UniswapQuoteService : IQuoteService
 {
-    private QuoteConfiguration _configuration;
+    private readonly QuoteConfiguration _configuration;
 
-    private ILogger _logger;
+    private readonly ILogger _logger;
 
-    private HttpClient _httpClient;
+    private readonly HttpClient _httpClient;
 
     public UniswapQuoteService(IConfiguration configuration, ILogger logger)
     {
