@@ -1,6 +1,7 @@
 namespace SigGen.Models;
 
 public class SwapResponse {
-    string RequestId { get; set; }
-    string Routing { get; set; }
+    public string? RequestId { get; set; }
+    public string? Routing { get; set; }
+    public Quote? Quote { get; set; }
 }
