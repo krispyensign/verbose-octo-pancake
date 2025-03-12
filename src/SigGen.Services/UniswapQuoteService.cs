@@ -75,7 +75,11 @@ public class UniswapQuoteService : IQuoteService
             await _httpClient.PostAsync(_configuration.Path, jsonContent, cancellationToken);
         if (response.StatusCode != HttpStatusCode.OK) {
             _logger.LogError(response.ReasonPhrase);
-            _logger.LogInformation(await response?.Content?.ReadAsStringAsync());
+            if (response.Content != null) {
+                #pragma warning disable CS8604 // Possible null reference argument.
+                _logger.LogInformation(await response.Content.ReadAsStringAsync(cancellationToken));
+                #pragma warning restore CS8604 // Possible null reference argument.
+            }
         }
         response.EnsureSuccessStatusCode();
 
@@ -84,7 +88,9 @@ public class UniswapQuoteService : IQuoteService
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             WriteIndented = true
         };
+        #pragma warning disable CS8604 // Possible null reference argument.
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(serializeOptions, cancellationToken);
+        #pragma warning restore CS8604 // Possible null reference argument.
         if (quoteResponse?.Quote?.Output?.Amount == null)
         {
             var msg ="quote amount response was null.";
