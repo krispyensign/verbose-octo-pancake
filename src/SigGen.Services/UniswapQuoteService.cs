@@ -1,11 +1,7 @@
-
-using System.Collections;
 using System.Net;
 using System.Net.Http.Json;
-using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Text.Json;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using SigGen.Models;
 namespace SigGen.Services;
