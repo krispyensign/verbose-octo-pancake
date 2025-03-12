@@ -1,10 +1,13 @@
-using Microsoft.Extensions.DependencyInjection;
+using SigGen.Models;
 using SigGen.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddLogging(builder => builder.AddConsole());
+builder.Services.AddSingleton<QuoteConfiguration>(
+    s => builder.Configuration.GetSection("Quote").Get<QuoteConfiguration>()
+);
 builder.Services.AddSingleton<IQuoteService, UniswapQuoteService>();
 builder.Services.AddRazorPages();
 

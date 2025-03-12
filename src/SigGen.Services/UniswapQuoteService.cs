@@ -1,4 +1,5 @@
 
+using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -15,9 +16,9 @@ public class UniswapQuoteService : IQuoteService
 
     private readonly HttpClient _httpClient;
 
-    public UniswapQuoteService(IConfiguration configuration, ILogger logger)
+    public UniswapQuoteService(QuoteConfiguration configuration, ILogger<UniswapQuoteService> logger)
     {
-        _configuration = configuration?.GetValue<QuoteConfiguration>("Quote")
+        _configuration = configuration
             ?? throw new ArgumentNullException(nameof(configuration));
 
         _logger = logger 
@@ -27,6 +28,9 @@ public class UniswapQuoteService : IQuoteService
         {
             BaseAddress = new Uri(_configuration.BaseAddress)
         };
+
+        _logger.LogInformation("using base Address {}", _configuration.BaseAddress);
+        _logger.LogInformation("using path {}", _configuration.Path);
     }
 
     public async Task<string> GetQuote(
@@ -49,8 +53,15 @@ public class UniswapQuoteService : IQuoteService
             JsonSerializer.Serialize(request),
             Encoding.UTF8,
             "application/json");
+        jsonContent.Headers.Add("x-api-key", "JoyCGj29tT4pymvhaGciK4r1aIPvqW6W53xT1fwo");
+        jsonContent.Headers.Add("x-request-source", "uniswap-web");
+        jsonContent.Headers.Add("x-universal-router-version", "2.0");
         using HttpResponseMessage response =
             await _httpClient.PostAsync(_configuration.Path, jsonContent, cancellationToken);
+
+        if (response.StatusCode != HttpStatusCode.OK) {
+            _logger.LogError(response.ReasonPhrase);
+        }
         response.EnsureSuccessStatusCode();
 
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(cancellationToken);
