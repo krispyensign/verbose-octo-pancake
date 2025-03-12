@@ -1,8 +1,9 @@
+
 namespace SigGen.Models;
 
 public class QuoteRequest {
     public required string Amount { get; set; }
-    public required SortedDictionary<int, GasStrategy> GasStrategies { get; set; }
+    public required List<GasStrategy> GasStrategies { get; set; }
     public List<string> Protocols { get; set; } = [
         "V4", "V3", "V2"
     ];

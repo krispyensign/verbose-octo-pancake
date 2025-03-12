@@ -1,6 +1,8 @@
 
+using System.Collections;
 using System.Net;
 using System.Net.Http.Json;
+using System.Runtime.InteropServices.Marshalling;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Configuration;
@@ -33,38 +35,56 @@ public class UniswapQuoteService : IQuoteService
         _logger.LogInformation("using path {}", _configuration.Path);
     }
 
-    public async Task<string> GetQuote(
-        string amount, string tokenIn, string tokenOut,
-        CancellationToken cancellationToken = default)
+    public static StringContent Construct(QuoteRequest request) 
     {
-        _logger.BeginScope(nameof(UniswapQuoteService));
-        var request = new QuoteRequest
+        var serializeOptions = new JsonSerializerOptions
         {
-            Amount = amount,
-            TokenIn = tokenIn,
-            TokenOut = tokenOut,
-            GasStrategies = new SortedDictionary<int, GasStrategy>
-            {
-                { 0, new GasStrategy() },
-            },
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
         };
-
-        using StringContent jsonContent = new(
-            JsonSerializer.Serialize(request),
+        var jsonContent = new StringContent(
+            JsonSerializer.Serialize(request, serializeOptions),
             Encoding.UTF8,
             "application/json");
         jsonContent.Headers.Add("x-api-key", "JoyCGj29tT4pymvhaGciK4r1aIPvqW6W53xT1fwo");
         jsonContent.Headers.Add("x-request-source", "uniswap-web");
         jsonContent.Headers.Add("x-universal-router-version", "2.0");
+
+        return jsonContent;
+    }
+
+    public async Task<string> GetQuote(
+        string amount, string tokenIn, string tokenOut,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.BeginScope(nameof(UniswapQuoteService));
+        var strat = new List<GasStrategy>
+        {
+            new()
+        };
+        var request = new QuoteRequest
+        {
+            Amount = amount,
+            TokenIn = tokenIn,
+            TokenOut = tokenOut,
+            GasStrategies = strat,
+        };
+
+        var jsonContent = Construct(request);
         using HttpResponseMessage response =
             await _httpClient.PostAsync(_configuration.Path, jsonContent, cancellationToken);
-
         if (response.StatusCode != HttpStatusCode.OK) {
             _logger.LogError(response.ReasonPhrase);
+            _logger.LogInformation(await response?.Content?.ReadAsStringAsync());
         }
         response.EnsureSuccessStatusCode();
 
-        var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(cancellationToken);
+        var serializeOptions = new JsonSerializerOptions
+        {
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            WriteIndented = true
+        };
+        var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(serializeOptions, cancellationToken);
         if (quoteResponse?.Quote?.Output?.Amount == null)
         {
             var msg ="quote amount response was null.";

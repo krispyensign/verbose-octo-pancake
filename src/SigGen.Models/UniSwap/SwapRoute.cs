@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace SigGen.Models;
 
 public class SwapRoute {
