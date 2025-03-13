@@ -1,4 +1,4 @@
-namespace SigGen.Models;
+namespace SigGen.Models.Uniswap;
 
 public class GasEstimate {
     public string? Type { get; set; }

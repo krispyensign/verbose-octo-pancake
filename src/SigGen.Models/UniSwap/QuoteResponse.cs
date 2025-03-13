@@ -1,4 +1,4 @@
-namespace SigGen.Models;
+namespace SigGen.Models.Uniswap;
 
 public class QuoteResponse {
     public string? RequestId { get; set; }

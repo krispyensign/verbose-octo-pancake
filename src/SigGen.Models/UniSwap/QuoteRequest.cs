@@ -1,5 +1,5 @@
 
-namespace SigGen.Models;
+namespace SigGen.Models.Uniswap;
 
 public class QuoteRequest {
     public required string Amount { get; set; }

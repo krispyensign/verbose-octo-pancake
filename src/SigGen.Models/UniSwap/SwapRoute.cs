@@ -1,6 +1,4 @@
-using System.Text.Json.Serialization;
-
-namespace SigGen.Models;
+namespace SigGen.Models.Uniswap;
 
 public class SwapRoute {
     public string? Type { get; set; }

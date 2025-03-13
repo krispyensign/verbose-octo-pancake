@@ -1,4 +1,4 @@
-namespace SigGen.Models;
+namespace SigGen.Models.Uniswap;
 
 public class Quote {
     public int ChainId { get; set; }

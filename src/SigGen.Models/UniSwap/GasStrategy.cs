@@ -1,4 +1,4 @@
-namespace SigGen.Models;
+namespace SigGen.Models.Uniswap;
 
 public class GasStrategy {
     public double DisplayLimitInflationFactor { get; set; } = 1.15;
