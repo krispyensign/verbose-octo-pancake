@@ -14,6 +14,16 @@ public class UniswapQuoteService : IQuoteService
     private readonly ILogger _logger;
 
     private readonly HttpClient _httpClient;
+    private static JsonSerializerOptions serializeOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+    private static JsonSerializerOptions serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
 
     public UniswapQuoteService(QuoteConfiguration configuration, ILogger<UniswapQuoteService> logger)
     {
@@ -34,11 +44,6 @@ public class UniswapQuoteService : IQuoteService
 
     public static StringContent Construct(QuoteRequest request) 
     {
-        var serializeOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        };
         var jsonContent = new StringContent(
             JsonSerializer.Serialize(request, serializeOptions),
             Encoding.UTF8,
@@ -78,11 +83,6 @@ public class UniswapQuoteService : IQuoteService
         }
         response.EnsureSuccessStatusCode();
 
-        var serializeOptions = new JsonSerializerOptions
-        {
-            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-            WriteIndented = true
-        };
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(serializeOptions, cancellationToken);
         if (quoteResponse?.Quote?.Output?.Amount == null)
         {
