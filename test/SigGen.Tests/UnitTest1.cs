@@ -4,6 +4,7 @@ using SigGen.Services;
 using System;
 using Xunit;
 using SigGen.Models;
+using Newtonsoft.Json;
 
 public class UnitTest1
 {
@@ -22,8 +23,32 @@ public class UnitTest1
         };
         var j = UniswapQuoteService.Construct(request);
         var r = await j.ReadAsStringAsync();
-        Console.WriteLine(r);
-
+        Assert.NotEmpty(r);
     }
 
+    [Fact]
+    public void TestLoadRequestJson()
+    {
+        string? json;
+        using (var r = new StreamReader("quoteRequest.json"))
+        {
+            json = r.ReadToEnd();
+        }
+        var quoteRequest = JsonConvert.DeserializeObject<QuoteRequest>(json);
+        Assert.NotNull(quoteRequest);
+        Assert.Equal("1000000000000000000", quoteRequest.Amount);
+    }
+    
+    [Fact]
+    public void TestLoadResponseJson()
+    {
+        string? json;
+        using (var r = new StreamReader("quoteResponse.json"))
+        {
+            json = r.ReadToEnd();
+        }
+        var quoteResponse = JsonConvert.DeserializeObject<QuoteResponse>(json);
+        Assert.NotNull(quoteResponse?.Quote?.Input?.Amount);
+        Assert.Equal("1000000000000000000", quoteResponse.Quote.Input.Amount);
+    }
 }

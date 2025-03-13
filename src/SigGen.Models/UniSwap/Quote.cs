@@ -5,7 +5,7 @@ public class Quote {
     public TokenQuote? Input { get; set; }
     public TokenQuote? Output { get; set; }
     public string? Swapper { get; set; }
-    public List<SwapRoute>? Route { get; set; }
+    public List<List<SwapRoute>>? Route { get; set; }
     public double Slippage { get; set; }
     public string? TradeType { get; set; }
     public string? QuoteId { get; set; }

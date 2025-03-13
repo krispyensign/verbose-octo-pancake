@@ -24,4 +24,10 @@
     <ProjectReference Include="..\..\src\SigGen.Services\SigGen.Services.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="..\..\sample\**\*.json">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>
