@@ -8,7 +8,6 @@
             "args": [
                 "build",
                 "${workspaceFolder}/src/SigGen/SigGen.csproj",
-                "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
             "problemMatcher": "$msCompile"
@@ -20,7 +19,6 @@
             "args": [
                 "publish",
                 "${workspaceFolder}/src/SigGen/SigGen.csproj",
-                "/property:GenerateFullPaths=true",
                 "/consoleloggerparameters:NoSummary;ForceNoAlign"
             ],
             "problemMatcher": "$msCompile"

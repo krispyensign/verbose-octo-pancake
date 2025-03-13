@@ -96,6 +96,7 @@ public class UniswapQuoteService : IQuoteService
             throw new InvalidOperationException(msg);
         }
 
+        _logger.LogInformation(await response.Content.ReadAsStringAsync(cancellationToken));
         return quoteResponse.Quote.Output.Amount;
     }
 }
