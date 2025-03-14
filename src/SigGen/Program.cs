@@ -8,6 +8,7 @@ builder.Services.AddLogging(builder => builder.AddConsole());
 builder.Services.AddSingleton<QuoteConfiguration>(
     _ => builder.Configuration.GetSection("Quote").Get<QuoteConfiguration>()
 );
+builder.Services.AddSingleton<IWalletService, WalletService>();
 builder.Services.AddSingleton<IQuoteService, UniswapQuoteService>();
 builder.Services.AddRazorPages();
 

@@ -1,3 +1,6 @@
 [submodule "vendor/neth-uni"]
 	path = vendor/neth-uni
 	url = https://github.com/Nethereum/Nethereum.Uniswap-Example.git
+[submodule "vendor/neth-balance"]
+	path = vendor/neth-balance
+	url = https://github.com/Nethereum/Nethereum.Balances.git

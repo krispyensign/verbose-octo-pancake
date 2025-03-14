@@ -4,9 +4,11 @@
     ViewData["Title"] = "Home page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="mt-3">
+@foreach (var b in @Model.Balances)
+{
+    <strong>@b.Key </strong> @b.Value
+}
 </div>
 
 <form method="post">
@@ -29,7 +31,7 @@
 @if(Model.QuoteResult1 != null) 
 {
     <div class="mt-3">
-        <strong>API Response 1:</strong> @Model.QuoteResult1
-        <strong>API Response 2:</strong> @Model.QuoteResult2
+        <strong>V3 pool:</strong> @Model.QuoteResult1
+        <strong>V4 pool:</strong> @Model.QuoteResult2
     </div>
 }

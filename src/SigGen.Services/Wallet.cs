@@ -11,6 +11,19 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Nethereum.Web3;
+using Nethereum.ABI.FunctionEncoding.Attributes;
+using Nethereum.Contracts.CQS;
+using Nethereum.Util;
+using Nethereum.Web3.Accounts;
+using Nethereum.Hex.HexConvertors.Extensions;
+using Nethereum.Contracts;
+using Nethereum.Contracts.Extensions;
+using System.Numerics;
+using Nethereum.Contracts.Standards.ERC1155.ContractDefinition;
+using Nethereum.Contracts.Standards.ERC20.ContractDefinition;
+using Nethereum.Contracts.Standards.ERC20.TokenList;
+using Nethereum.StandardTokenEIP20;
 
 namespace SigGen.Services;
 
@@ -18,23 +31,19 @@ namespace SigGen.Services;
 public interface IWalletService
 {
     decimal ConvertFromWei(string tokenAddress);
-    Task<List<BigInteger>> GetTokenBalances(List<string> tokenAddresses);
+    Task<Dictionary<string, BigInteger>> GetTokenBalances();
 }
 
 
 public class WalletService : IWalletService
 {
-    private readonly WalletConfiguration _configuration;
+    private readonly QuoteConfiguration _configuration;
     private readonly ILogger _logger;
     // ERC20 Token Contract ABI (simplified)
-    private static readonly string abi = @"[
-        { 'constant': true, 'inputs': [{ 'name': 'owner', 'type': 'address' }], 'name': 'balanceOf', 'outputs': [{ 'name': '', 'type': 'uint256' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' },
-        { 'constant': true, 'inputs': [], 'name': 'decimals', 'outputs': [{ 'name': '', 'type': 'uint8' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }
-    ]";
     private Dictionary<string, uint> tokenDecimals = [];
     private readonly Web3 web3;
 
-    public WalletService(WalletConfiguration configuration, ILogger<WalletService> logger)
+    public WalletService(QuoteConfiguration configuration, ILogger<WalletService> logger)
     {
         _configuration = configuration
             ?? throw new ArgumentNullException(nameof(configuration));
@@ -54,21 +63,21 @@ public class WalletService : IWalletService
         return 0;
     }
 
-    public async Task<List<BigInteger>> GetTokenBalances(List<string> tokenAddresses)
+    public async Task<Dictionary<string, BigInteger>> GetTokenBalances()
     {
-        _logger.LogInformation("using base Address {}", _configuration.URL);
-        var tokenBalances = new List<BigInteger>{};
-        foreach (var tokenAddress in tokenAddresses)
+        var tokenBalances = new Dictionary<string, BigInteger>{};
+        foreach (var tokenAddress in _configuration.Tokens)
         {
-            var contract = web3.Eth.GetContract(abi, tokenAddress);
-            var balanceFunction = contract.GetFunction("balanceOf");
-            var decimalsFunction = contract.GetFunction("decimals");
+            BigInteger tokens;
+            if (tokenAddress.Key == "ETH")
+            {
+                tokens = await web3.Eth.GetBalance.SendRequestAsync(_configuration.WalletAddress);
+            } else {
+                var tokenService = new StandardTokenService(web3, tokenAddress.Value);
+                tokens = await tokenService.BalanceOfQueryAsync(_configuration.WalletAddress);
+            }
 
-            // Get the balance
-            var balance = await balanceFunction.CallAsync<BigInteger>(_configuration.WalletAddress);
-            var decimals = await decimalsFunction.CallAsync<uint>();
-            tokenDecimals.Add(tokenAddress, decimals);
-            tokenBalances.Add(balance);
+            tokenBalances.Add(tokenAddress.Key, tokens);
         }
 
         return tokenBalances;
