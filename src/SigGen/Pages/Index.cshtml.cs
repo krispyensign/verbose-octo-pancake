@@ -37,7 +37,7 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService) 
         {
             var quoteResult1 = await _quoteService.GetExactQuoteV4(val, TokenInput, TokenOutput, "v3");
             QuoteResult1 = quoteResult1.ToString();
-            var quoteResult2 = await _quoteService.GetExactQuoteV4(val, TokenInput, TokenOutput, "v4");
+            var quoteResult2 = await _quoteService.GetExactQuoteV2(val, TokenInput, TokenOutput, "v4");
             QuoteResult2 = quoteResult2.ToString();
         }
 
