@@ -14,16 +14,16 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
 
     // Bind the posted property so that the input value is available in OnPost.
     [BindProperty]
-    public string TokenInput { get; set; }
+    public string? TokenInput { get; set; }
     [BindProperty]
-    public string TokenOutput { get; set; }
+    public string? TokenOutput { get; set; }
     [BindProperty]
-    public string Amount { get; set; }
+    public string? Amount { get; set; }
 
     // API Call results
-    public Dictionary<string, BigInteger> Balances;
-    public string QuoteResult1 { get; set; }
-    public string QuoteResult2 { get; set; }
+    public Dictionary<string, BigInteger> Balances { get; set;} = [];
+    public string? QuoteResult1 { get; set; }
+    public string? QuoteResult2 { get; set; }
 
     public async Task<IActionResult> OnGet() {
         Balances = await _walletService.GetTokenBalances();
@@ -36,6 +36,12 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
     {
         if (!ModelState.IsValid)
         {
+            return Page();
+        }
+
+        if (TokenInput == null|| TokenOutput == null)
+        {
+            _logger.LogError("TokenInput and TokenOutput cannot be null");
             return Page();
         }
 
