@@ -11,7 +11,6 @@ using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
-using SigGen.Models.Uniswap;
 
 namespace SigGen.Services;
 
@@ -26,17 +25,13 @@ public interface IWalletService
 public class WalletService : IWalletService
 {
     private readonly WalletConfiguration _configuration;
-
     private readonly ILogger _logger;
-
     // ERC20 Token Contract ABI (simplified)
     private static readonly string abi = @"[
         { 'constant': true, 'inputs': [{ 'name': 'owner', 'type': 'address' }], 'name': 'balanceOf', 'outputs': [{ 'name': '', 'type': 'uint256' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' },
         { 'constant': true, 'inputs': [], 'name': 'decimals', 'outputs': [{ 'name': '', 'type': 'uint8' }], 'payable': false, 'stateMutability': 'view', 'type': 'function' }
     ]";
-
     private Dictionary<string, uint> tokenDecimals = [];
-
     private readonly Web3 web3;
 
     public WalletService(WalletConfiguration configuration, ILogger<WalletService> logger)
