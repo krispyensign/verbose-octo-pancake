@@ -139,32 +139,29 @@ public class UniswapQuoteService : IQuoteService
     public async Task<BigInteger> GetExactQuote(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
     {
         // Create the contract instance
-        var contractAddress = _configuration.QuoterAddress;
-        var contract = web3.Eth.GetContract(QuoteExactInputSingleFunctionABI, contractAddress);
-
-        // Get the function handler
-        var functionHandler = contract.GetFunction("quoteExactInputSingle");
-
         // Call the function
-        var tokenIn = _configuration.Tokens[tokenSymbolIn];
-        var tokenOut = _configuration.Tokens[tokenSymbolOut];
         var pool = _configuration.Pools.FirstOrDefault(p => p.Meta == meta && (
             p.Token0Name == tokenSymbolIn || p.Token0Name == tokenSymbolOut
         ) && (
             p.Token1Name == tokenSymbolIn || p.Token1Name == tokenSymbolOut
         )) ?? throw new InvalidOperationException("bad tokens");
-        var fn = new QuoteExactInputSingleParams
+        var tokenIn = _configuration.Tokens[tokenSymbolIn];
+        var tokenOut = _configuration.Tokens[tokenSymbolOut];
+        var pk = new PoolKey
         {
-               TokenIn = tokenIn,
-               TokenOut = tokenOut,
-               Fee = pool.Fee,
-               AmountIn = amountIn,
-               SqrtPriceLimitX96 = 0,
+            Currency0 = tokenIn,
+            Currency1 = tokenOut,
+            Fee = pool.Fee,
         };
 
+        var v4Quoter = new IV4QuotersolServiceBase(web3, _configuration.QuoterAddress);
         try
         {
-                var stuff = await functionHandler.CallAsync<(BigInteger, BigInteger, uint, BigInteger)>(fn);
+            var receipt = await v4Quoter.QuoteExactInputSingleRequestAndWaitForReceiptAsync(new QuoteExactSingleParams
+            {
+                PoolKey = pk,
+                ExactAmount = amountIn,
+            });
         }
         catch (RpcResponseException ex)
         {
