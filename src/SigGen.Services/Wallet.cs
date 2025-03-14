@@ -9,7 +9,6 @@ namespace SigGen.Services;
 
 public interface IWalletService
 {
-    decimal ConvertFromWei(string tokenAddress);
     Task<Dictionary<string, BigInteger>> GetTokenBalances();
 }
 
@@ -33,15 +32,6 @@ public class WalletService : IWalletService
         web3 = new Web3(_configuration.URL);
     }
 
-    public decimal ConvertFromWei(string tokenAddress)
-    {
-        if (tokenDecimals.TryGetValue(tokenAddress, out var decimals)) {
-            return decimals;
-        }
-
-        return 0;
-    }
-
     public async Task<Dictionary<string, BigInteger>> GetTokenBalances()
     {
         var tokenBalances = new Dictionary<string, BigInteger>{};
@@ -51,9 +41,12 @@ public class WalletService : IWalletService
             if (tokenAddress.Key == "ETH")
             {
                 tokens = await web3.Eth.GetBalance.SendRequestAsync(_configuration.WalletAddress);
+                tokenDecimals.Add(tokenAddress.Key, 18);
             } else {
                 var tokenService = new StandardTokenService(web3, tokenAddress.Value);
                 tokens = await tokenService.BalanceOfQueryAsync(_configuration.WalletAddress);
+                var decimals = await tokenService.DecimalsQueryAsync();
+                tokenDecimals.Add(tokenAddress.Key, decimals);
             }
 
             tokenBalances.Add(tokenAddress.Key, tokens);
