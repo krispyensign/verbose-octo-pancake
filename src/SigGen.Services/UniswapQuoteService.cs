@@ -8,10 +8,13 @@ using SigGen.Models;
 using Nethereum.Web3;
 using System.Numerics;
 using System.ComponentModel;
-using Nethereum.JsonRpc.Client;
-using Nethereum.Contracts;
-using Uniswap.ABI.IV4Quotersol.ContractDefinition;
-using Uniswap.ABI.IV4Quotersol;
+using Nethereum.Uniswap.V4.V4Quoter;
+using Nethereum.Uniswap.V4.V4Quoter.ContractDefinition;
+using Nethereum.Uniswap.V4.PositionManager;
+using Nethereum.Uniswap.V4;
+using Nethereum.Uniswap.V4.StateView;
+using Nethereum.Uniswap;
+using Nethereum.Hex.HexConvertors.Extensions;
 
 namespace SigGen.Services;
 
@@ -33,30 +36,6 @@ public class UniswapQuoteService : IQuoteService
         WriteIndented = true
     };
 
-    private const string QuoteExactInputSingleFunctionABI = @"[{
-        ""inputs"": [
-            {
-                ""name"": ""params"",
-                ""type"": ""tuple"",
-                ""components"": [
-                    { ""name"": ""tokenIn"", ""type"": ""address"" },
-                    { ""name"": ""tokenOut"", ""type"": ""address"" },
-                    { ""name"": ""amountIn"", ""type"": ""uint256"" },
-                    { ""name"": ""fee"", ""type"": ""uint24"" },
-                    { ""name"": ""sqrtPriceLimitX96"", ""type"": ""uint160"" }
-                ]
-            }
-        ],
-        ""name"": ""quoteExactInputSingle"",
-        ""outputs"": [
-            { ""name"": ""amountOut"", ""type"": ""uint256"" },
-            { ""name"": ""sqrtPriceX96After"", ""type"": ""uint160"" },
-            { ""name"": ""initializedTicksCrossed"", ""type"": ""uint32"" },
-            { ""name"": ""gasEstimate"", ""type"": ""uint256"" }
-        ],
-        ""payable"": false,
-        ""type"": ""function""
-    }]";
     private readonly Web3 web3;
 
     public UniswapQuoteService(QuoteConfiguration configuration, ILogger<UniswapQuoteService> logger)
@@ -136,10 +115,8 @@ public class UniswapQuoteService : IQuoteService
         return quoteResponse.Quote.Output.Amount;
     }
 
-    public async Task<BigInteger> GetExactQuote(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
+    public async Task<BigInteger> GetExactQuoteV4(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
     {
-        // Create the contract instance
-        // Call the function
         var pool = _configuration.Pools.FirstOrDefault(p => p.Meta == meta && (
             p.Token0Name == tokenSymbolIn || p.Token0Name == tokenSymbolOut
         ) && (
@@ -147,28 +124,28 @@ public class UniswapQuoteService : IQuoteService
         )) ?? throw new InvalidOperationException("bad tokens");
         var tokenIn = _configuration.Tokens[tokenSymbolIn];
         var tokenOut = _configuration.Tokens[tokenSymbolOut];
+        var zero = "0x0000000000000000000000000000000000000000";
         var pk = new PoolKey
         {
-            Currency0 = tokenIn,
-            Currency1 = tokenOut,
+            Currency0 = zero,
+            Currency1 = tokenIn,
             Fee = pool.Fee,
+            TickSpacing = pool.TickSpacing,
+            Hooks = zero,
         };
 
-        var v4Quoter = new IV4QuotersolServiceBase(web3, _configuration.QuoterAddress);
-        try
-        {
-            var receipt = await v4Quoter.QuoteExactInputSingleRequestAndWaitForReceiptAsync(new QuoteExactSingleParams
-            {
-                PoolKey = pk,
-                ExactAmount = amountIn,
-            });
-        }
-        catch (RpcResponseException ex)
-        {
-            Console.WriteLine($"Error: {ex.Message}");
-            // You can also inspect ex.Data for more details if available
-        }
+        var v4Quoter = new V4QuoterService(web3, UniswapAddresses.BaseQuoterV4);
 
-        return 0;
+        var quoteExactParams = new QuoteExactSingleParams()
+        {
+            ExactAmount = amountIn,
+            PoolKey = pk,
+            ZeroForOne = false,
+            HookData = zero.HexToByteArray(),
+        };
+
+        var quote = await v4Quoter.QuoteExactInputSingleQueryAsync(quoteExactParams);
+
+        return quote.AmountOut;
     }
 }

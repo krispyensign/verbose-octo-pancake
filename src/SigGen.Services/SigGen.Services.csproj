@@ -15,6 +15,7 @@
   <ItemGroup>
     <ProjectReference Include="..\SigGen.Models\SigGen.Models.csproj" />
     <ProjectReference Include="..\..\gen\gen.csproj" />
+    <ProjectReference Include="..\..\vendor\neth-uni\Nethereum.Uniswap\Nethereum.Uniswap.csproj" />
   </ItemGroup>
 
 </Project>

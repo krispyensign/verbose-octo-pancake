@@ -6,4 +6,5 @@ public class Pool {
     public uint Fee { get; set; }
     public string Token0Name { get; set; }
     public string Token1Name { get; set; }
+    public int TickSpacing { get; set; }
 }
