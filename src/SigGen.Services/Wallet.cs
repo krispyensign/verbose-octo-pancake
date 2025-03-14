@@ -18,7 +18,7 @@ public class WalletService : IWalletService
     private readonly QuoteConfiguration _configuration;
     private readonly ILogger _logger;
     // ERC20 Token Contract ABI (simplified)
-    private Dictionary<string, uint> tokenDecimals = [];
+    private Dictionary<string, BigInteger> tokenDecimals = [];
     private readonly Web3 web3;
 
     public WalletService(QuoteConfiguration configuration, ILogger<WalletService> logger)
@@ -32,6 +32,14 @@ public class WalletService : IWalletService
         web3 = new Web3(_configuration.URL);
     }
 
+    public static void Upsert(Dictionary<string, BigInteger> dict, string key, BigInteger data)
+    {
+        if (!dict.TryAdd(key, data))
+        {
+            dict[key] = data;
+        }
+    }
+
     public async Task<Dictionary<string, BigInteger>> GetTokenBalances()
     {
         var tokenBalances = new Dictionary<string, BigInteger>{};
@@ -41,15 +49,15 @@ public class WalletService : IWalletService
             if (tokenAddress.Key == "ETH")
             {
                 tokens = await web3.Eth.GetBalance.SendRequestAsync(_configuration.WalletAddress);
-                tokenDecimals.Add(tokenAddress.Key, 18);
+                Upsert(tokenDecimals, tokenAddress.Key, 18);
             } else {
                 var tokenService = new StandardTokenService(web3, tokenAddress.Value);
                 tokens = await tokenService.BalanceOfQueryAsync(_configuration.WalletAddress);
                 var decimals = await tokenService.DecimalsQueryAsync();
-                tokenDecimals.Add(tokenAddress.Key, decimals);
+                Upsert(tokenDecimals, tokenAddress.Key, decimals);
             }
 
-            tokenBalances.Add(tokenAddress.Key, tokens);
+            Upsert(tokenBalances, tokenAddress.Key, tokens);
         }
 
         return tokenBalances;
