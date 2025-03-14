@@ -3,4 +3,5 @@ obj/
 
 .fake
 appsettings.Local.json
-gen/
+gen/IV4Quoter/sol
+gen/*.abi
