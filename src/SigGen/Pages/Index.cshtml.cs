@@ -1,8 +1,6 @@
 using System.Numerics;
-using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Nethereum.Util;
 using SigGen.Services;
 
 namespace siggen.Pages;
