@@ -10,6 +10,9 @@ using System.Numerics;
 using System.ComponentModel;
 using Nethereum.JsonRpc.Client;
 using Nethereum.Contracts;
+using Uniswap.ABI.IV4Quotersol.ContractDefinition;
+using Uniswap.ABI.IV4Quotersol;
+
 namespace SigGen.Services;
 
 public class UniswapQuoteService : IQuoteService
