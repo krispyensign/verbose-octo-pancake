@@ -26,10 +26,11 @@
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 
-@if (Model.QuoteResult != null)
+@if (Model.QuoteResult1 != null && Model.QuoteResult2 != null)
 {
     <div class="mt-3">
-        <strong>API Response:</strong> @Model.QuoteResult
+        <strong>API Response 1:</strong> @Model.QuoteResult1
+        <strong>API Response 2:</strong> @Model.QuoteResult2
     </div>
 }
 

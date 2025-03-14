@@ -3,7 +3,7 @@
 using SigGen.Services;
 using System;
 using Xunit;
-using SigGen.Models;
+using SigGen.Models.Uniswap;
 using Newtonsoft.Json;
 
 public class UnitTest1

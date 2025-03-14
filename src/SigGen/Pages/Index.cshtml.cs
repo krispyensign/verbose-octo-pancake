@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Nethereum.Util;
 using SigGen.Services;
 
 namespace siggen.Pages;
@@ -18,7 +19,8 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService) 
     public string Amount { get; set; }
 
     // This property holds the result of the API call.
-    public string QuoteResult { get; set; }
+    public string QuoteResult1 { get; set; }
+    public string QuoteResult2 { get; set; }
 
     public void OnGet() {}
 
@@ -31,7 +33,13 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService) 
         }
 
         // Call the API service using the input from the textbox.
-        QuoteResult = await _quoteService.GetQuote(Amount, TokenInput, TokenOutput);
+        if (UInt128.TryParse(Amount, out var val))
+        {
+            var quoteResult1 = await _quoteService.GetExactQuote(val, TokenInput, TokenOutput, "v3");
+            QuoteResult1 = quoteResult1.ToString();
+            var quoteResult2 = await _quoteService.GetExactQuote(val, TokenInput, TokenOutput, "v4");
+            QuoteResult1 = quoteResult2.ToString();
+        }
 
         // Optionally, you might want to return a RedirectToPage or simply refresh the page.
         return Page();
