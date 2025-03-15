@@ -65,6 +65,13 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
 
         InitValues ??= _configration.InitBalances;
         InitValues ??= await _quoteService.GetValueQuotes(Balances, TokenInput);
+        foreach (var b in Balances)
+        {
+            if (! InitValues.ContainsKey(b.Key))
+            {
+                InitValues.Add(b.Key, "0");
+            }
+        }
 
         CurrentValues = await _quoteService.GetValueQuotes(Balances, TokenInput);
 
