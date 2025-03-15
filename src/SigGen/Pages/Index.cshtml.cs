@@ -18,7 +18,7 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
 
     // Bind the posted property so that the input value is available in OnPost.
     [BindProperty]
-    public string TokenInput { get; set; } = configuration.StartingToken;
+    public string TokenInput { get; set; } = "ETH";
 
     // API Call results
     public Dictionary<string, BigInteger> Balances { get; set;} = [];

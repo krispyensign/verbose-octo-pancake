@@ -30,4 +30,8 @@
     <ProjectReference Include="..\SigGen.Services\SigGen.Services.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Content Include="local.json" />
+  </ItemGroup>
+
 </Project>
