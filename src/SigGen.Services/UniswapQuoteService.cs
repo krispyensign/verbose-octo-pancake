@@ -119,6 +119,12 @@ public class UniswapQuoteService : IQuoteService
                 continue;
             }
 
+            if (startingAmount == 0)
+            {
+                initBalances.Add(t.Key, "0");
+                continue;
+            }
+
             var v2Result = await GetExactQuoteV2(startingAmount, startingToken, t.Key, "");
             var v4Result = await GetExactQuoteV4(startingAmount, startingToken, t.Key, "");
 
