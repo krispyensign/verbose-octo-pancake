@@ -1,3 +1,5 @@
+using System.Numerics;
+
 namespace SigGen.Models;
 
 public class QuoteConfiguration {
@@ -7,5 +9,7 @@ public class QuoteConfiguration {
     public required string QuoterAddress { get; set; }
     public required string WalletAddress { get; set; }
     public required Dictionary<string, string> Tokens { get; set; }
+    public Dictionary<string, BigInteger> InitBalances { get; set; }
+    public required string StartingToken { get; set; }
     public required List<Pool> Pools { get; set; }
 }

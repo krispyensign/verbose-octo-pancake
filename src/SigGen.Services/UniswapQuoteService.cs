@@ -11,6 +11,7 @@ using System.Drawing;
 using Nethereum.Uniswap.V3.QuoterV2;
 using Nethereum.ABI;
 using Nethereum.Uniswap.V3.QuoterV2.ContractDefinition;
+using Microsoft.VisualBasic;
 
 namespace SigGen.Services;
 
@@ -40,6 +41,10 @@ public class UniswapQuoteService : IQuoteService
     public async Task<BigInteger> GetExactQuoteV4(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
     {
         var pool = GetPool(tokenSymbolIn, tokenSymbolOut, meta);
+        if (pool == null)
+        {
+            return 0;
+        }
         var quoteExactParams = new QuoteExactSingleParams()
         {
             ExactAmount = amountIn,
@@ -62,6 +67,10 @@ public class UniswapQuoteService : IQuoteService
     public async Task<BigInteger> GetExactQuoteV2(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
     {
         var pool = GetPool(tokenSymbolIn, tokenSymbolOut, meta);
+        if (pool == null)
+        {
+            return 0;
+        }
         WrapEthIfEth(ref tokenSymbolIn, ref tokenSymbolOut);
 
         var parms = new QuoteExactInputSingleParams
@@ -76,13 +85,13 @@ public class UniswapQuoteService : IQuoteService
         return quote.AmountOut;
     }
 
-    private Pool GetPool(string tokenSymbolIn, string tokenSymbolOut, string meta)
+    private Pool? GetPool(string tokenSymbolIn, string tokenSymbolOut, string meta)
     {
         return _configuration.Pools.FirstOrDefault(p => p?.Meta?.Contains(meta) ?? true && (
-            p.Token0Name == tokenSymbolIn || p.Token0Name == tokenSymbolOut
+            (p?.Token0Name ?? "") == tokenSymbolIn || (p?.Token0Name ?? "") == tokenSymbolOut
         ) && (
-            p.Token1Name == tokenSymbolIn || p.Token1Name == tokenSymbolOut
-        )) ?? throw new InvalidOperationException("bad tokens");
+            (p?.Token1Name ?? "") == tokenSymbolIn || (p?.Token1Name ?? "") == tokenSymbolOut
+        ));
     }
 
     private static void WrapEthIfEth(ref string tokenSymbolIn, ref string tokenSymbolOut)
@@ -95,5 +104,41 @@ public class UniswapQuoteService : IQuoteService
         {
             tokenSymbolOut = "WETH";
         }
+    }
+
+    public async Task<Dictionary<string, BigInteger>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken, bool immutable)
+    {
+        if (_configuration.InitBalances != null && immutable)
+        {
+            return _configuration.InitBalances;
+        }
+
+        var initBalances = new Dictionary<string, BigInteger>();
+        var startingAmount = balances[startingToken];
+        foreach(var t in _configuration.Tokens)
+        {
+            if (t.Key == startingToken)
+            {
+                initBalances.Add(startingToken, startingAmount);
+                continue;
+            }
+
+            var v2Result = await GetExactQuoteV2(startingAmount, startingToken, t.Key, "");
+            var v4Result = await GetExactQuoteV4(startingAmount, startingToken, t.Key, "");
+
+            BigInteger result;
+            if (v2Result > v4Result)
+            {
+                result = v2Result;
+            }
+            else
+            {
+                result = v4Result;
+            }
+
+            initBalances.Add(t.Key, result);
+        }
+
+        return initBalances;
     }
 }
