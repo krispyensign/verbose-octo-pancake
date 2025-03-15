@@ -12,6 +12,15 @@ builder.Services.AddSingleton<IWalletService, WalletService>();
 builder.Services.AddSingleton<IQuoteService, UniswapQuoteService>();
 builder.Services.AddRazorPages();
 
+builder.Services.AddDistributedMemoryCache();
+
+builder.Services.AddSession(options =>
+{
+    options.IdleTimeout = TimeSpan.FromHours(24);
+    options.Cookie.HttpOnly = true;
+    options.Cookie.IsEssential = true;
+});
+
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -27,6 +36,8 @@ app.UseHttpsRedirection();
 app.UseRouting();
 
 app.UseAuthorization();
+
+app.UseSession();
 
 app.MapStaticAssets();
 app.MapRazorPages()

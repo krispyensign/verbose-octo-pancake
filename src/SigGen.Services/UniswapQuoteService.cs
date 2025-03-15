@@ -45,6 +45,7 @@ public class UniswapQuoteService : IQuoteService
         {
             return 0;
         }
+
         var quoteExactParams = new QuoteExactSingleParams()
         {
             ExactAmount = amountIn,
@@ -106,37 +107,23 @@ public class UniswapQuoteService : IQuoteService
         }
     }
 
-    public async Task<Dictionary<string, BigInteger>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken, bool immutable)
+    public async Task<Dictionary<string, string>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken)
     {
-        if (_configuration.InitBalances != null && immutable)
-        {
-            return _configuration.InitBalances;
-        }
-
-        var initBalances = new Dictionary<string, BigInteger>();
+        var initBalances = new Dictionary<string, string>();
         var startingAmount = balances[startingToken];
         foreach(var t in _configuration.Tokens)
         {
             if (t.Key == startingToken)
             {
-                initBalances.Add(startingToken, startingAmount);
+                initBalances.Add(startingToken, startingAmount.ToString());
                 continue;
             }
 
             var v2Result = await GetExactQuoteV2(startingAmount, startingToken, t.Key, "");
             var v4Result = await GetExactQuoteV4(startingAmount, startingToken, t.Key, "");
 
-            BigInteger result;
-            if (v2Result > v4Result)
-            {
-                result = v2Result;
-            }
-            else
-            {
-                result = v4Result;
-            }
-
-            initBalances.Add(t.Key, result);
+            BigInteger result = v2Result > v4Result ? v2Result : v4Result;
+            initBalances.Add(t.Key, result.ToString());
         }
 
         return initBalances;
