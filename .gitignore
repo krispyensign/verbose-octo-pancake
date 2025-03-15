@@ -2,7 +2,6 @@ bin/
 obj/
 
 .fake
-appsettings.Local.json
-appsettings.Development.json
 gen/IV4Quoter/sol
 gen/*.abi
+local.json
