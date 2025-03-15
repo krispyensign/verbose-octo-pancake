@@ -4,69 +4,62 @@
     ViewData["Title"] = "Home page";
 }
 
-<p>
-    Account Balances
-</p>
-<div class="mt-3">
-@foreach (var b in @Model.Balances)
-{
-    <div>
-    <strong>@b.Key </strong> @b.Value w
-    </div>
-}
-</div>
+<meta http-equiv="refresh" content="30">
+<script type="text/javascript">
+    let myDate = new Date();
+    let myDay = myDate.getDay();
 
-<p>
-    Historical Account Value
-</p>
-<div class="mt-3">
-@foreach (var b in @Model.InitBalances)
-{
-    <div>
-    <strong>@b.Key </strong> @b.Value w
-    </div>
-}
-</div>
+    // Array of days. 
+    let weekday = ['Sunday', 'Monday', 'Tuesday',
+        'Wednesday', 'Thursday', 'Friday', 'Saturday'
+    ];
+    document.write("Today is : " + weekday[myDay]);
+    document.write("<br/>");
 
-<p>
-    Current Account Value
-</p>
-<div class="mt-3">
-@foreach (var b in @Model.CurrentBalances)
-{
-    <div>
-    <strong>@b.Key </strong> @b.Value w
-    </div>
-}
-</div>
-
-<p>
-    Bot input:
-</p>
+    // get hour value. 
+    let hours = myDate.getHours();
+    let ampm = hours >= 12 ? 'PM' : 'AM';
+    hours = hours % 12;
+    hours = hours ? hours : 12;
+    let minutes = myDate.getMinutes();
+    minutes = minutes < 10 ? '0' + minutes : minutes;
+    let myTime = hours + ":" + minutes +
+        ":" + myDate.getMilliseconds() + " " + ampm;
+    document.write("\tLast Updated: " + myTime); 
+</script>
+<hr>
 <form method="post">
     <div class="form-group">
         <label asp-for="TokenInput">TokenIn</label>
-        <input asp-for="TokenInput" class="form-control" />
+        <input asp-for="TokenInput" class="form-control" placeholder="ETH" />
         <span asp-validation-for="TokenInput" class="text-danger"></span>
-
-        <label asp-for="TokenOutput">TokenOut</label>
-        <input asp-for="TokenOutput" class="form-control" />
-        <span asp-validation-for="TokenOutput" class="text-danger"></span>
-
-        <label asp-for="Amount">Amount</label>
-        <input asp-for="Amount" class="form-control" />
-        <span asp-validation-for="Amount" class="text-danger"></span>
     </div>
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>
-
-@if(Model.QuoteResult1 != null) 
+<hr>
+<table>
+    <tr>
+        <th>Token Name</th>
+        <th>Balance</th>
+        <th>Profitable</th>
+        <th>Current</th>
+        <th>Session</th>
+        <th>Historical</th>
+    </tr>
+@foreach (var b in @Model.Balances)
 {
-<p>
-    Quote:
-</p>
-    <div class="mt-3">
-        <strong>V3 pool:</strong> @Model.QuoteResult1 w
-        <strong>V4 pool:</strong> @Model.QuoteResult2 w
-    </div>
+    <tr>
+        <td>@b.Key</td>
+        <td>@b.Value</td>
+        <td>@if(Model.IsProfitable(b.Key, @Model.CurrentValues?[b.Key] ?? "", 
+            @Model.SessionInitValues?[b.Key] ?? "", @Model.InitValues?[b.Key] ?? ""))
+        {
+           <div>✅</div>
+        }
+        </td>
+        <td>@Model.CurrentValues?[b.Key]</td>
+        <td>@Model.SessionInitValues?[b.Key]</td>
+        <td>@Model.InitValues?[b.Key]</td>
+    </tr>
 }
+</table>
