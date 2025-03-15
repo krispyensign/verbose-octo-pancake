@@ -55,6 +55,8 @@
             @Model.SessionInitValues?[b.Key] ?? "", @Model.InitValues?[b.Key] ?? ""))
         {
            <div>✅</div>
+        } else {
+            <div>❌</div>
         }
         </td>
         <td>@Model.CurrentValues?[b.Key]</td>
