@@ -18,7 +18,6 @@ public class UniswapQuoteService : IQuoteService
 
     private readonly ILogger _logger;
 
-    private readonly HttpClient _httpClient;
     private static JsonSerializerOptions serializeOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -40,11 +39,6 @@ public class UniswapQuoteService : IQuoteService
 
         _logger = logger 
             ?? throw new ArgumentNullException(nameof(logger));
-
-        _httpClient = new()
-        {
-            BaseAddress = new Uri(_configuration.BaseAddress)
-        };
 
     }
 
@@ -79,8 +73,13 @@ public class UniswapQuoteService : IQuoteService
         };
 
         var jsonContent = Construct(request);
+        using HttpClient client = new()
+        {
+            BaseAddress = new Uri(_configuration.BaseAddress)
+        };
+
         using HttpResponseMessage response =
-            await _httpClient.PostAsync(_configuration.Path, jsonContent, cancellationToken);
+            await client.PostAsync(_configuration.Path, jsonContent, cancellationToken);
         if (response.StatusCode != HttpStatusCode.OK) {
             _logger.LogError(response.ReasonPhrase);
             if (response.Content != null) {

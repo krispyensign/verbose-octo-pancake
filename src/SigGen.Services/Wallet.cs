@@ -48,11 +48,25 @@ public class WalletService : IWalletService
             BigInteger tokens;
             if (tokenAddress.Key == "ETH")
             {
-                tokens = await web3.Eth.GetBalance.SendRequestAsync(_configuration.WalletAddress);
+                try {
+                    tokens = await web3.Eth.GetBalance.SendRequestAsync(_configuration.WalletAddress);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("{}", e);
+                    continue;
+                }
                 Upsert(tokenDecimals, tokenAddress.Key, 18);
             } else {
                 var tokenService = new StandardTokenService(web3, tokenAddress.Value);
-                tokens = await tokenService.BalanceOfQueryAsync(_configuration.WalletAddress);
+                try {
+                    tokens = await tokenService.BalanceOfQueryAsync(_configuration.WalletAddress);
+                }
+                catch (Exception e)
+                {
+                    _logger.LogError("{}", e);
+                    continue;
+                }
                 var decimals = await tokenService.DecimalsQueryAsync();
                 Upsert(tokenDecimals, tokenAddress.Key, decimals);
             }
