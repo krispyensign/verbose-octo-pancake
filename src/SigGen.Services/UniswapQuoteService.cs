@@ -30,32 +30,6 @@ public class UniswapQuoteService : IQuoteService
         WriteIndented = true
     };
 
-    private const string QuoteExactInputSingleFunctionABI = @"[{
-        ""inputs"": [
-            {
-                ""name"": ""params"",
-                ""type"": ""tuple"",
-                ""components"": [
-                    { ""name"": ""tokenIn"", ""type"": ""address"" },
-                    { ""name"": ""tokenOut"", ""type"": ""address"" },
-                    { ""name"": ""amountIn"", ""type"": ""uint256"" },
-                    { ""name"": ""fee"", ""type"": ""uint24"" },
-                    { ""name"": ""sqrtPriceLimitX96"", ""type"": ""uint160"" }
-                ]
-            }
-        ],
-        ""name"": ""quoteExactInputSingle"",
-        ""outputs"": [
-            { ""name"": ""amountOut"", ""type"": ""uint256"" },
-            { ""name"": ""sqrtPriceX96After"", ""type"": ""uint160"" },
-            { ""name"": ""initializedTicksCrossed"", ""type"": ""uint32"" },
-            { ""name"": ""gasEstimate"", ""type"": ""uint256"" }
-        ],
-        ""payable"": false,
-        ""type"": ""function""
-    }]";
-    private readonly Web3 web3;
-
     public UniswapQuoteService(QuoteConfiguration configuration, ILogger<UniswapQuoteService> logger)
     {
         _configuration = configuration
@@ -68,7 +42,6 @@ public class UniswapQuoteService : IQuoteService
         {
             BaseAddress = new Uri(_configuration.BaseAddress)
         };
-        web3 = new Web3(_configuration.URL);
 
     }
 
@@ -133,42 +106,33 @@ public class UniswapQuoteService : IQuoteService
         return quoteResponse.Quote.Output.Amount;
     }
 
-    public async Task<BigInteger> GetExactQuote(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
+     public async Task<Dictionary<string, string>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken)
     {
-        // Create the contract instance
-        var contractAddress = _configuration.QuoterAddress;
-        var contract = web3.Eth.GetContract(QuoteExactInputSingleFunctionABI, contractAddress);
-
-        // Get the function handler
-        var functionHandler = contract.GetFunction("quoteExactInputSingle");
-
-        // Call the function
-        var tokenIn = _configuration.Tokens[tokenSymbolIn];
-        var tokenOut = _configuration.Tokens[tokenSymbolOut];
-        var pool = _configuration.Pools.FirstOrDefault(p => p.Meta == meta && (
-            p.Token0Name == tokenSymbolIn || p.Token0Name == tokenSymbolOut
-        ) && (
-            p.Token1Name == tokenSymbolIn || p.Token1Name == tokenSymbolOut
-        )) ?? throw new InvalidOperationException("bad tokens");
-        var fn = new QuoteExactInputSingleParams
+        if (string.IsNullOrWhiteSpace(startingToken))
         {
-               TokenIn = tokenIn,
-               TokenOut = tokenOut,
-               Fee = pool.Fee,
-               AmountIn = amountIn,
-               SqrtPriceLimitX96 = 0,
-        };
-
-        try
-        {
-                var stuff = await functionHandler.CallAsync<(BigInteger, BigInteger, uint, BigInteger)>(fn);
+            _logger.LogError("CurrentToken must not be empty");
+            return [];
         }
-        catch (RpcResponseException ex)
+        var initBalances = new Dictionary<string, string>();
+        var startingAmount = balances[startingToken];
+        foreach(var t in _configuration.Tokens)
         {
-            Console.WriteLine($"Error: {ex.Message}");
-            // You can also inspect ex.Data for more details if available
+            if (t.Key == startingToken)
+            {
+                initBalances.Add(startingToken, startingAmount.ToString());
+                continue;
+            }
+
+            if (startingAmount == 0)
+            {
+                initBalances.Add(t.Key, "0");
+                continue;
+            }
+
+            var result = await GetQuote(startingAmount.ToString(), startingToken, t.Key);
+            initBalances.Add(t.Key, result.ToString());
         }
 
-        return 0;
+        return initBalances;
     }
 }

@@ -31,7 +31,7 @@
 <form method="post">
     <div class="form-group">
         <label asp-for="TokenInput">TokenIn</label>
-        <input asp-for="TokenInput" class="form-control" placeholder="ETH" />
+        <input asp-for="TokenInput" class="form-control" placeholder="@Model.CurrentToken" />
         <span asp-validation-for="TokenInput" class="text-danger"></span>
     </div>
     <button type="submit" class="btn btn-primary">Submit</button>

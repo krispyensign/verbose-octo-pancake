@@ -1,6 +1,7 @@
 using System.Numerics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.IdentityModel.Tokens;
 using Nethereum.Util;
 using SigGen.Models;
 using SigGen.Services;
@@ -14,18 +15,19 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
     private readonly IWalletService _walletService = walletService;
     private readonly QuoteConfiguration _configration = configuration;
     private static readonly string _sessionKeyName = "_TheKey";
+    private static readonly string _sessionCurrentToken = "_CurrentToken";
     private static readonly decimal Tp = 1.001M;
 
     // Bind the posted property so that the input value is available in OnPost.
     [BindProperty]
-    public string TokenInput { get; set; } = "ETH";
+    public string TokenInput { get; set; } = "";
 
-    // API Call results
+    // API
+    public string CurrentToken { get; set ; } = "";
     public Dictionary<string, BigInteger> Balances { get; set;} = [];
     public Dictionary<string, string>? InitValues { get; set;}
     public Dictionary<string, string>? SessionInitValues { get; set; }
     public Dictionary<string, string>? CurrentValues { get; set; }
-    public string? CurrentToken { get; set ; }
 
     public bool IsProfitable(
         string name,
@@ -61,10 +63,27 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
 
     public async Task<bool> UpdateValues() 
     {
+        // check if this is a new session
+        var isNewSession = string.IsNullOrEmpty(HttpContext.Session.GetString(_sessionKeyName));
+        if (!isNewSession)
+        {
+            CurrentToken = HttpContext.Session.GetString(_sessionCurrentToken) ?? "";   
+        }
+
+        if (string.IsNullOrWhiteSpace(CurrentToken))
+        {
+            _logger.LogError("CurrentToken must not be empty");
+        }
+
+        // get the wallet balances
         Balances = await _walletService.GetTokenBalances();
 
+        // get the current values
+        CurrentValues = await _quoteService.GetValueQuotes(Balances, CurrentToken);
+
+        // populate the historical values if they exist
         InitValues ??= _configration.InitBalances;
-        InitValues ??= await _quoteService.GetValueQuotes(Balances, TokenInput);
+        InitValues ??= CurrentValues.ToDictionary(kv => kv.Key, kv => kv.Value);
         foreach (var b in Balances)
         {
             if (!InitValues.ContainsKey(b.Key))
@@ -73,16 +92,14 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
             }
         }
 
-        CurrentValues = await _quoteService.GetValueQuotes(Balances, TokenInput);
-
-        if (string.IsNullOrEmpty(HttpContext.Session.GetString(_sessionKeyName)))
+        // create a new session if the old one is no longer valid
+        if (isNewSession)
         {
-            HttpContext.Session.SetString(_sessionKeyName, "x");
             foreach(var kv in CurrentValues)
             {
                 HttpContext.Session.SetString(kv.Key, kv.Value);
             }
-            SessionInitValues = await _quoteService.GetValueQuotes(Balances, TokenInput);
+            SessionInitValues = await _quoteService.GetValueQuotes(Balances, CurrentToken);
         }
         else
         {
@@ -92,14 +109,19 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
                 SessionInitValues.Add(kv.Key, HttpContext.Session.GetString(kv.Key) ?? "");
             }
         }
-        SessionInitValues ??= CurrentValues;
+        SessionInitValues ??= CurrentValues.ToDictionary(kv => kv.Key, kv => kv.Value);
+
+        HttpContext.Session.SetString(_sessionKeyName, "x");
 
         return true;
     }
 
 
     public async Task<IActionResult> OnGet() {
-        await UpdateValues();
+        if (!string.IsNullOrWhiteSpace(CurrentToken))
+        {
+            await UpdateValues();
+        }
 
         return Page();
     }
@@ -111,7 +133,7 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
         {
             return Page();
         }
-
+        CurrentToken = TokenInput;
         HttpContext.Session.Clear();
         await UpdateValues();
 

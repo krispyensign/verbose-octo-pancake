@@ -5,7 +5,8 @@ namespace SigGen.Services;
 
 public interface IQuoteService
 {
-    Task<BigInteger> GetExactQuoteV4(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta);
-    Task<BigInteger> GetExactQuoteV2(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta);
+    Task<string> GetQuote(
+        string amount, string tokenIn, string tokenOut,
+        CancellationToken cancellationToken = default);
     Task<Dictionary<string, string>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken);
 }
