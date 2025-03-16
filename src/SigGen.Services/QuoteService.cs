@@ -9,4 +9,6 @@ public interface IQuoteService
         string amount, string tokenIn, string tokenOut,
         CancellationToken cancellationToken = default);
     Task<Dictionary<string, string>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken);
+    public Dictionary<string, string>? InitValues { get; set; }
+    public Dictionary<string, string>? SessionInitValues { get; set; }
 }

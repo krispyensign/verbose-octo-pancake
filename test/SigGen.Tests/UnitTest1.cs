@@ -16,10 +16,10 @@ public class UnitTest1
             Amount = "1000000000000000000",
             TokenIn = "0x0000000000000000000000000000000000000000",
             TokenOut = "0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
-            GasStrategies = new List<GasStrategy>
-            {
+            GasStrategies =
+            [
                 new(),
-            },
+            ],
         };
         var j = UniswapQuoteService.Construct(request);
         var r = await j.ReadAsStringAsync();
@@ -36,6 +36,7 @@ public class UnitTest1
         }
         var quoteRequest = JsonConvert.DeserializeObject<QuoteRequest>(json);
         Assert.NotNull(quoteRequest);
+        Assert.NotNull(quoteRequest.GasStrategies);
         Assert.Equal("1000000000000000000", quoteRequest.Amount);
     }
     

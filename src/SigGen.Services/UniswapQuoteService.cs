@@ -22,13 +22,14 @@ public class UniswapQuoteService : IQuoteService
     private static JsonSerializerOptions serializeOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
     };
     private static JsonSerializerOptions serializerOptions = new()
     {
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
-        WriteIndented = true
     };
+
+    public Dictionary<string, string>? InitValues { get; set; }
+    public Dictionary<string, string>? SessionInitValues { get; set; }
 
     public UniswapQuoteService(QuoteConfiguration configuration, ILogger<UniswapQuoteService> logger)
     {
@@ -62,7 +63,6 @@ public class UniswapQuoteService : IQuoteService
         string amount, string tokenIn, string tokenOut,
         CancellationToken cancellationToken = default)
     {
-        _logger.BeginScope(nameof(UniswapQuoteService));
         _logger.LogInformation("using base Address {}", _configuration.BaseAddress);
         _logger.LogInformation("using path {}", _configuration.Path);
         var strat = new List<GasStrategy>
@@ -72,9 +72,10 @@ public class UniswapQuoteService : IQuoteService
         var request = new QuoteRequest
         {
             Amount = amount,
-            TokenIn = tokenIn,
-            TokenOut = tokenOut,
+            TokenIn = _configuration.Tokens[tokenIn],
+            TokenOut = _configuration.Tokens[tokenOut],
             GasStrategies = strat,
+            Swapper = _configuration.WalletAddress,
         };
 
         var jsonContent = Construct(request);
@@ -85,8 +86,8 @@ public class UniswapQuoteService : IQuoteService
             if (response.Content != null) {
                 _logger.LogInformation(await response.Content.ReadAsStringAsync(cancellationToken));
             }
+            return "0";
         }
-        response.EnsureSuccessStatusCode();
 
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(serializeOptions, cancellationToken);
         if (quoteResponse?.Quote?.Output?.Amount == null)
