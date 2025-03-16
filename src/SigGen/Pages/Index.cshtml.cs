@@ -1,7 +1,6 @@
 using System.Numerics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore.Migrations.Operations;
 using Microsoft.IdentityModel.Tokens;
 using Nethereum.Util;
 using SigGen.Models;
@@ -14,8 +13,6 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
     private readonly ILogger<IndexModel> _logger = logger;
     private readonly IQuoteService _quoteService = quoteService;
     private readonly IWalletService _walletService = walletService;
-    private readonly QuoteConfiguration _configration = configuration;
-    private static readonly string _sessionCurrentToken = "_CurrentToken";
     private static readonly decimal Tp = 1.001M;
 
     // Bind the posted property so that the input value is available in OnPost.
@@ -65,20 +62,17 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
     {
         if (!string.IsNullOrWhiteSpace(currentToken))
         {
-            HttpContext.Session.SetString(_sessionCurrentToken, currentToken);
-            return currentToken;
+            _quoteService.CurrentToken = currentToken;
         }
 
-        currentToken = HttpContext.Session.GetString(_sessionCurrentToken) ?? "ETH";   
-        HttpContext.Session.SetString(_sessionCurrentToken, currentToken);
-        return currentToken;
+        return currentToken ?? "ETH";
     }
 
     public async Task<Dictionary<string, string>> ProcessValuesCache(string currentToken, bool resetSessionValues, Dictionary<string, string> cache)
     {
         if (resetSessionValues || cache.IsNullOrEmpty())
         {
-            cache = await _quoteService.GetValueQuotes(Balances, currentToken);
+            cache = CurrentValues.ToDictionary(kv => kv.Key, kv => kv.Value);
         }
 
         foreach (var b in Balances)

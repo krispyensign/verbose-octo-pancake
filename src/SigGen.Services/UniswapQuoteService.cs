@@ -28,8 +28,10 @@ public class UniswapQuoteService : IQuoteService
         PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
     };
 
+    // temp ram cache
     public Dictionary<string, string>? InitValues { get; set; }
     public Dictionary<string, string>? SessionInitValues { get; set; }
+    public string? CurrentToken { get; set; }
 
     public UniswapQuoteService(QuoteConfiguration configuration, ILogger<UniswapQuoteService> logger)
     {
@@ -63,8 +65,6 @@ public class UniswapQuoteService : IQuoteService
         string amount, string tokenIn, string tokenOut,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("using base Address {}", _configuration.BaseAddress);
-        _logger.LogInformation("using path {}", _configuration.Path);
         var strat = new List<GasStrategy>
         {
             new()
@@ -89,22 +89,9 @@ public class UniswapQuoteService : IQuoteService
             return "0";
         }
 
+        // _logger.LogInformation(await response.Content.ReadAsStringAsync(cancellationToken));
         var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(serializeOptions, cancellationToken);
-        if (quoteResponse?.Quote?.Output?.Amount == null)
-        {
-            var msg ="quote amount response was null.";
-            try {
-                _logger.LogInformation(quoteResponse?.ToString());
-                _logger.LogError(msg);
-            } catch {
-                Console.WriteLine(msg);
-            }
-
-            throw new InvalidOperationException(msg);
-        }
-
-        _logger.LogInformation(await response.Content.ReadAsStringAsync(cancellationToken));
-        return quoteResponse.Quote.Output.Amount;
+        return quoteResponse?.Quote?.Output?.Amount ?? "";
     }
 
      public async Task<Dictionary<string, string>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken)

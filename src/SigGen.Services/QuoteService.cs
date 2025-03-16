@@ -11,4 +11,5 @@ public interface IQuoteService
     Task<Dictionary<string, string>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken);
     public Dictionary<string, string>? InitValues { get; set; }
     public Dictionary<string, string>? SessionInitValues { get; set; }
+    public string? CurrentToken { get; set; }
 }
