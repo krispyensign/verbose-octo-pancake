@@ -125,8 +125,24 @@ public class UniswapQuoteService : IQuoteService
                 continue;
             }
 
-            var v2Result = await GetExactQuoteV2(startingAmount, startingToken, t.Key, "");
-            var v4Result = await GetExactQuoteV4(startingAmount, startingToken, t.Key, "");
+            BigInteger v2Result = 0;
+            BigInteger v4Result = 0;
+            try
+            {
+                v2Result = await GetExactQuoteV2(startingAmount, startingToken, t.Key, "");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("{}", e);
+            }
+
+            try {
+                v4Result = await GetExactQuoteV4(startingAmount, startingToken, t.Key, "");
+            }
+            catch (Exception e)
+            {
+                _logger.LogError("{}", e);
+            }
 
             BigInteger result = v2Result > v4Result ? v2Result : v4Result;
             initBalances.Add(t.Key, result.ToString());
