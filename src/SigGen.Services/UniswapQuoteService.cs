@@ -1,28 +1,60 @@
+using System.Net;
+using System.Net.Http.Json;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using SigGen.Models.Uniswap;
 using SigGen.Models;
 using Nethereum.Web3;
 using System.Numerics;
-using Nethereum.Uniswap.V4.V4Quoter;
-using Nethereum.Uniswap.V4.V4Quoter.ContractDefinition;
-using Nethereum.Uniswap;
-using Nethereum.Hex.HexConvertors.Extensions;
-using Nethereum.Hex.HexTypes;
-using System.Drawing;
-using Nethereum.Uniswap.V3.QuoterV2;
-using Nethereum.ABI;
-using Nethereum.Uniswap.V3.QuoterV2.ContractDefinition;
-using Microsoft.VisualBasic;
-
+using System.ComponentModel;
+using Nethereum.JsonRpc.Client;
+using Nethereum.Contracts;
 namespace SigGen.Services;
 
 public class UniswapQuoteService : IQuoteService
 {
     private readonly QuoteConfiguration _configuration;
+
     private readonly ILogger _logger;
+
+    private readonly HttpClient _httpClient;
+    private static JsonSerializerOptions serializeOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+    private static JsonSerializerOptions serializerOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true
+    };
+
+    private const string QuoteExactInputSingleFunctionABI = @"[{
+        ""inputs"": [
+            {
+                ""name"": ""params"",
+                ""type"": ""tuple"",
+                ""components"": [
+                    { ""name"": ""tokenIn"", ""type"": ""address"" },
+                    { ""name"": ""tokenOut"", ""type"": ""address"" },
+                    { ""name"": ""amountIn"", ""type"": ""uint256"" },
+                    { ""name"": ""fee"", ""type"": ""uint24"" },
+                    { ""name"": ""sqrtPriceLimitX96"", ""type"": ""uint160"" }
+                ]
+            }
+        ],
+        ""name"": ""quoteExactInputSingle"",
+        ""outputs"": [
+            { ""name"": ""amountOut"", ""type"": ""uint256"" },
+            { ""name"": ""sqrtPriceX96After"", ""type"": ""uint160"" },
+            { ""name"": ""initializedTicksCrossed"", ""type"": ""uint32"" },
+            { ""name"": ""gasEstimate"", ""type"": ""uint256"" }
+        ],
+        ""payable"": false,
+        ""type"": ""function""
+    }]";
     private readonly Web3 web3;
-    private static readonly string zero = "0x0000000000000000000000000000000000000000";
-    private readonly V4QuoterService _v4QuoterService;
-    private readonly QuoterV2Service _quoterV2Service;
 
     public UniswapQuoteService(QuoteConfiguration configuration, ILogger<UniswapQuoteService> logger)
     {
@@ -32,122 +64,111 @@ public class UniswapQuoteService : IQuoteService
         _logger = logger 
             ?? throw new ArgumentNullException(nameof(logger));
 
+        _httpClient = new()
+        {
+            BaseAddress = new Uri(_configuration.BaseAddress)
+        };
         web3 = new Web3(_configuration.URL);
 
-        _v4QuoterService = new V4QuoterService(web3, UniswapAddresses.BaseQuoterV4);
-        _quoterV2Service = new QuoterV2Service(web3, UniswapAddresses.BaseQuoterV2);
     }
 
-    public async Task<BigInteger> GetExactQuoteV4(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
+    public static StringContent Construct(QuoteRequest request) 
     {
-        var pool = GetPool(tokenSymbolIn, tokenSymbolOut, meta);
-        if (pool == null)
-        {
-            return 0;
-        }
+        var jsonContent = new StringContent(
+            JsonSerializer.Serialize(request, serializeOptions),
+            Encoding.UTF8,
+            "application/json");
+        jsonContent.Headers.Add("x-api-key", "JoyCGj29tT4pymvhaGciK4r1aIPvqW6W53xT1fwo");
+        jsonContent.Headers.Add("x-request-source", "uniswap-web");
+        jsonContent.Headers.Add("x-universal-router-version", "2.0");
 
-        var quoteExactParams = new QuoteExactSingleParams()
+        return jsonContent;
+    }
+
+    public async Task<string> GetQuote(
+        string amount, string tokenIn, string tokenOut,
+        CancellationToken cancellationToken = default)
+    {
+        _logger.BeginScope(nameof(UniswapQuoteService));
+        _logger.LogInformation("using base Address {}", _configuration.BaseAddress);
+        _logger.LogInformation("using path {}", _configuration.Path);
+        var strat = new List<GasStrategy>
         {
-            ExactAmount = amountIn,
-            PoolKey = new PoolKey
-            {
-                Currency0 = _configuration.Tokens[pool.Token0Name],
-                Currency1 = _configuration.Tokens[pool.Token1Name],
-                Fee = pool.Fee,
-                TickSpacing = pool.TickSpacing,
-                Hooks = zero,
-            },
-            ZeroForOne = pool.Token0Name == tokenSymbolIn,
-            HookData = zero.HexToByteArray(),
+            new()
         };
-        var quote = await _v4QuoterService.QuoteExactInputSingleQueryAsync(quoteExactParams);
-
-        return quote.AmountOut;
-    }
-
-    public async Task<BigInteger> GetExactQuoteV2(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
-    {
-        var pool = GetPool(tokenSymbolIn, tokenSymbolOut, meta);
-        if (pool == null)
+        var request = new QuoteRequest
         {
-            return 0;
-        }
-        WrapEthIfEth(ref tokenSymbolIn, ref tokenSymbolOut);
-
-        var parms = new QuoteExactInputSingleParams
-        {
-            AmountIn = amountIn,
-            Fee = pool.Fee,
-            TokenIn = _configuration.Tokens[tokenSymbolIn],
-            TokenOut = _configuration.Tokens[tokenSymbolOut],
+            Amount = amount,
+            TokenIn = tokenIn,
+            TokenOut = tokenOut,
+            GasStrategies = strat,
         };
-        var quote = await _quoterV2Service.QuoteExactInputSingleQueryAsync(parms);
 
-        return quote.AmountOut;
-    }
-
-    private Pool? GetPool(string tokenSymbolIn, string tokenSymbolOut, string meta)
-    {
-        return _configuration.Pools.FirstOrDefault(p => p?.Meta?.Contains(meta) ?? true && (
-            (p?.Token0Name ?? "") == tokenSymbolIn || (p?.Token0Name ?? "") == tokenSymbolOut
-        ) && (
-            (p?.Token1Name ?? "") == tokenSymbolIn || (p?.Token1Name ?? "") == tokenSymbolOut
-        ));
-    }
-
-    private static void WrapEthIfEth(ref string tokenSymbolIn, ref string tokenSymbolOut)
-    {
-        if (tokenSymbolIn == "ETH")
-        {
-            tokenSymbolIn = "WETH";
+        var jsonContent = Construct(request);
+        using HttpResponseMessage response =
+            await _httpClient.PostAsync(_configuration.Path, jsonContent, cancellationToken);
+        if (response.StatusCode != HttpStatusCode.OK) {
+            _logger.LogError(response.ReasonPhrase);
+            if (response.Content != null) {
+                _logger.LogInformation(await response.Content.ReadAsStringAsync(cancellationToken));
+            }
         }
-        if (tokenSymbolOut == "ETH")
+        response.EnsureSuccessStatusCode();
+
+        var quoteResponse = await response.Content.ReadFromJsonAsync<QuoteResponse>(serializeOptions, cancellationToken);
+        if (quoteResponse?.Quote?.Output?.Amount == null)
         {
-            tokenSymbolOut = "WETH";
-        }
-    }
-
-    public async Task<Dictionary<string, string>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken)
-    {
-        var initBalances = new Dictionary<string, string>();
-        var startingAmount = balances[startingToken];
-        foreach(var t in _configuration.Tokens)
-        {
-            if (t.Key == startingToken)
-            {
-                initBalances.Add(startingToken, startingAmount.ToString());
-                continue;
-            }
-
-            if (startingAmount == 0)
-            {
-                initBalances.Add(t.Key, "0");
-                continue;
-            }
-
-            BigInteger v2Result = 0;
-            BigInteger v4Result = 0;
-            try
-            {
-                v2Result = await GetExactQuoteV2(startingAmount, startingToken, t.Key, "");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("{}", e);
-            }
-
+            var msg ="quote amount response was null.";
             try {
-                v4Result = await GetExactQuoteV4(startingAmount, startingToken, t.Key, "");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("{}", e);
+                _logger.LogInformation(quoteResponse?.ToString());
+                _logger.LogError(msg);
+            } catch {
+                Console.WriteLine(msg);
             }
 
-            BigInteger result = v2Result > v4Result ? v2Result : v4Result;
-            initBalances.Add(t.Key, result.ToString());
+            throw new InvalidOperationException(msg);
         }
 
-        return initBalances;
+        _logger.LogInformation(await response.Content.ReadAsStringAsync(cancellationToken));
+        return quoteResponse.Quote.Output.Amount;
+    }
+
+    public async Task<BigInteger> GetExactQuote(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
+    {
+        // Create the contract instance
+        var contractAddress = _configuration.QuoterAddress;
+        var contract = web3.Eth.GetContract(QuoteExactInputSingleFunctionABI, contractAddress);
+
+        // Get the function handler
+        var functionHandler = contract.GetFunction("quoteExactInputSingle");
+
+        // Call the function
+        var tokenIn = _configuration.Tokens[tokenSymbolIn];
+        var tokenOut = _configuration.Tokens[tokenSymbolOut];
+        var pool = _configuration.Pools.FirstOrDefault(p => p.Meta == meta && (
+            p.Token0Name == tokenSymbolIn || p.Token0Name == tokenSymbolOut
+        ) && (
+            p.Token1Name == tokenSymbolIn || p.Token1Name == tokenSymbolOut
+        )) ?? throw new InvalidOperationException("bad tokens");
+        var fn = new QuoteExactInputSingleParams
+        {
+               TokenIn = tokenIn,
+               TokenOut = tokenOut,
+               Fee = pool.Fee,
+               AmountIn = amountIn,
+               SqrtPriceLimitX96 = 0,
+        };
+
+        try
+        {
+                var stuff = await functionHandler.CallAsync<(BigInteger, BigInteger, uint, BigInteger)>(fn);
+        }
+        catch (RpcResponseException ex)
+        {
+            Console.WriteLine($"Error: {ex.Message}");
+            // You can also inspect ex.Data for more details if available
+        }
+
+        return 0;
     }
 }
