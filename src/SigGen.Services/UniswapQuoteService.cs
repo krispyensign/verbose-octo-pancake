@@ -10,6 +10,7 @@ using System.Numerics;
 using System.ComponentModel;
 using Nethereum.JsonRpc.Client;
 using Nethereum.Contracts;
+using Nethereum.Util;
 namespace SigGen.Services;
 
 public class UniswapQuoteService : IQuoteService
@@ -117,7 +118,14 @@ public class UniswapQuoteService : IQuoteService
             }
 
             var result = await GetQuote(startingAmount.ToString(), startingToken, t.Key);
-            initBalances.Add(t.Key, result.ToString());
+            if (startingToken == "ETH" && BigDecimal.TryParse(result, out var br))
+            {
+                br *= (1 - 0.01);
+                result = br.FloorToBigInteger().ToString();
+
+            }
+
+            initBalances.Add(t.Key, result ?? "0");
         }
 
         return initBalances;
