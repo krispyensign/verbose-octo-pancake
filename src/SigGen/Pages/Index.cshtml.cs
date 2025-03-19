@@ -38,14 +38,7 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
             return Page();
         }
 
-        if (BigInteger.TryParse(Amount, out var result)) 
-        {
-            Results = await _quoteService.GetValueQuotes(TokenIn0, TokenIn1, result);
-        }
-        else
-        {
-            _logger.LogError("input must be BigInt parsable");
-        }
+        Results = await _quoteService.GetValueQuotes(TokenIn0, TokenIn1);
 
         return Page();
     }
