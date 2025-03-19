@@ -12,6 +12,7 @@ using Nethereum.Uniswap.V3.QuoterV2;
 using Nethereum.ABI;
 using Nethereum.Uniswap.V3.QuoterV2.ContractDefinition;
 using Microsoft.VisualBasic;
+using Nethereum.RPC.TransactionReceipts;
 
 namespace SigGen.Services;
 
@@ -29,7 +30,7 @@ public class UniswapQuoteService : IQuoteService
         _configuration = configuration
             ?? throw new ArgumentNullException(nameof(configuration));
 
-        _logger = logger 
+        _logger = logger
             ?? throw new ArgumentNullException(nameof(logger));
 
         web3 = new Web3(_configuration.URL);
@@ -107,47 +108,55 @@ public class UniswapQuoteService : IQuoteService
         }
     }
 
-    public async Task<Dictionary<string, string>> GetValueQuotes(Dictionary<string, BigInteger> balances, string startingToken)
+    public async Task<Dictionary<string, List<BigInteger>>> GetValueQuotes(string tokenIn0, string tokenIn1, BigInteger amount)
     {
-        var initBalances = new Dictionary<string, string>();
-        var startingAmount = balances[startingToken];
-        foreach(var t in _configuration.Tokens)
+        var results = new Dictionary<string, List<BigInteger>>();
+
+        try
         {
-            if (t.Key == startingToken)
+            var price1 = await GetExactQuoteV2(amount, tokenIn0, tokenIn1, "v3");
+            var price2 = await GetExactQuoteV2(amount, tokenIn1, tokenIn0, "v3");
+            BigInteger bid, ask;
+            if (price1 > price2)
             {
-                initBalances.Add(startingToken, startingAmount.ToString());
-                continue;
+                ask = price1;
+                bid = price2;
+            }
+            else
+            {
+                ask = price2;
+                bid = price1;
             }
 
-            if (startingAmount == 0)
-            {
-                initBalances.Add(t.Key, "0");
-                continue;
-            }
-
-            BigInteger v2Result = 0;
-            BigInteger v4Result = 0;
-            try
-            {
-                v2Result = await GetExactQuoteV2(startingAmount, startingToken, t.Key, "");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("{}", e);
-            }
-
-            try {
-                v4Result = await GetExactQuoteV4(startingAmount, startingToken, t.Key, "");
-            }
-            catch (Exception e)
-            {
-                _logger.LogError("{}", e);
-            }
-
-            BigInteger result = v2Result > v4Result ? v2Result : v4Result;
-            initBalances.Add(t.Key, result.ToString());
+            results.Add("v3", [bid, ask]);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("{}", e);
         }
 
-        return initBalances;
+        try
+        {
+            var price1 = await GetExactQuoteV4(amount, tokenIn0, tokenIn1, "v4");
+            var price2 = await GetExactQuoteV4(amount, tokenIn1, tokenIn0, "v4");
+            BigInteger bid, ask;
+            if (price1 > price2)
+            {
+                ask = price1;
+                bid = price2;
+            }
+            else
+            {
+                ask = price2;
+                bid = price1;
+            }
+            results.Add("v4", [bid, ask]);
+        }
+        catch (Exception e)
+        {
+            _logger.LogError("{}", e);
+        }
+
+        return results;
     }
 }

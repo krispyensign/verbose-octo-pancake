@@ -1,6 +1,7 @@
 using System.Numerics;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Nethereum.Util;
 using SigGen.Models;
 using SigGen.Services;
@@ -13,95 +14,20 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
     private readonly IQuoteService _quoteService = quoteService;
     private readonly IWalletService _walletService = walletService;
     private readonly QuoteConfiguration _configration = configuration;
-    private static readonly string _sessionKeyName = "_TheKey";
-    private static readonly decimal Tp = 1.001M;
 
     // Bind the posted property so that the input value is available in OnPost.
     [BindProperty]
-    public string TokenInput { get; set; } = "ETH";
+    public string? TokenIn0 { get; set; }
+    [BindProperty]
+    public string? TokenIn1 { get; set; }
+    [BindProperty]
+    public string? Amount { get; set; }
 
     // API Call results
-    public Dictionary<string, BigInteger> Balances { get; set;} = [];
-    public Dictionary<string, string>? InitValues { get; set;}
-    public Dictionary<string, string>? SessionInitValues { get; set; }
-    public Dictionary<string, string>? CurrentValues { get; set; }
-    public string? CurrentToken { get; set ; }
+    public Dictionary<string, List<BigInteger>>? Results;
 
-    public bool IsProfitable(
-        string name,
-        string currentValue,
-        string sessionValue,
-        string historicalValue
-    )
+    public void OnGet() 
     {
-        if (!BigInteger.TryParse(currentValue, out BigInteger cv))
-        {
-            return false;
-        }
-        if (!BigDecimal.TryParse(sessionValue, out BigDecimal sv))
-        {
-            return false;
-        }
-        if (!BigDecimal.TryParse(historicalValue, out BigDecimal hv))
-        {
-            return false;
-        }
-        if (hv > cv)
-        {
-            return false;
-        }
-        BigDecimal svCalcTp = sv * Tp;
-        if (cv > svCalcTp)
-        {
-            return true;
-        }
-
-        return false;
-    }
-
-    public async Task<bool> UpdateValues() 
-    {
-        Balances = await _walletService.GetTokenBalances();
-
-        InitValues ??= _configration.InitBalances;
-        InitValues ??= await _quoteService.GetValueQuotes(Balances, TokenInput);
-        foreach (var b in Balances)
-        {
-            if (!InitValues.ContainsKey(b.Key))
-            {
-                InitValues.Add(b.Key, "0");
-            }
-        }
-
-        CurrentValues = await _quoteService.GetValueQuotes(Balances, TokenInput);
-
-        if (string.IsNullOrEmpty(HttpContext.Session.GetString(_sessionKeyName)))
-        {
-            HttpContext.Session.SetString(_sessionKeyName, "x");
-            foreach(var kv in CurrentValues)
-            {
-                HttpContext.Session.SetString(kv.Key, kv.Value);
-            }
-            SessionInitValues = await _quoteService.GetValueQuotes(Balances, TokenInput);
-        }
-        else
-        {
-            SessionInitValues = [];
-            foreach(var kv in CurrentValues)
-            {
-                SessionInitValues.Add(kv.Key, HttpContext.Session.GetString(kv.Key) ?? "");
-            }
-        }
-        SessionInitValues ??= CurrentValues;
-
-        return true;
-    }
-
-
-    public async Task<IActionResult> OnGet() {
-        await UpdateValues();
-
-        return Page();
     }
 
     // When the form posts, this method will be executed.
@@ -112,8 +38,14 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
             return Page();
         }
 
-        HttpContext.Session.Clear();
-        await UpdateValues();
+        if (BigInteger.TryParse(Amount, out var result)) 
+        {
+            Results = await _quoteService.GetValueQuotes(TokenIn0, TokenIn1, result);
+        }
+        else
+        {
+            _logger.LogError("input must be BigInt parsable");
+        }
 
         return Page();
     }

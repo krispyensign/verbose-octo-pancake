@@ -30,38 +30,31 @@
 <hr>
 <form method="post">
     <div class="form-group">
-        <label asp-for="TokenInput">TokenIn</label>
-        <input asp-for="TokenInput" class="form-control" placeholder="ETH" />
-        <span asp-validation-for="TokenInput" class="text-danger"></span>
+        <label asp-for="Amount">Amount</label>
+        <input asp-for="Amount" class="form-control" />
+        <label asp-for="TokenIn0">TokenIn0</label>
+        <input asp-for="TokenIn0" class="form-control" />
+        <label asp-for="TokenIn1">TokenIn1</label>
+        <input asp-for="TokenIn1" class="form-control" />
     </div>
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 <hr>
 <table>
     <tr>
-        <th>Token Name</th>
-        <th>Balance</th>
-        <th>Profitable</th>
-        <th>Current</th>
-        <th>Session</th>
-        <th>Historical</th>
+        <th>Pool Meta</th>
+        <th>Bid</th>
+        <th>Ask</th>
     </tr>
-@foreach (var b in @Model.Balances)
+@if(@Model.Results != null)
 {
-    <tr>
-        <td>@b.Key</td>
-        <td>@b.Value</td>
-        <td>@if(Model.IsProfitable(b.Key, @Model.CurrentValues?[b.Key] ?? "", 
-            @Model.SessionInitValues?[b.Key] ?? "", @Model.InitValues?[b.Key] ?? ""))
-        {
-           <div>✅</div>
-        } else {
-            <div>❌</div>
-        }
-        </td>
-        <td>@Model.CurrentValues?[b.Key]</td>
-        <td>@Model.SessionInitValues?[b.Key]</td>
-        <td>@Model.InitValues?[b.Key]</td>
-    </tr>
+    @foreach (var b in @Model.Results)
+    {
+        <tr>
+            <td>@b.Key</td>
+            <td>@b.Value[0]</td>
+            <td>@b.Value[1]</td>
+        </tr>
+    }
 }
 </table>
