@@ -8,12 +8,10 @@ using SigGen.Services;
 
 namespace siggen.Pages;
 
-public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, IWalletService walletService, QuoteConfiguration configuration) : PageModel
+public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService) : PageModel
 {
     private readonly ILogger<IndexModel> _logger = logger;
     private readonly IQuoteService _quoteService = quoteService;
-    private readonly IWalletService _walletService = walletService;
-    private readonly QuoteConfiguration _configration = configuration;
 
     // Bind the posted property so that the input value is available in OnPost.
     [BindProperty]
@@ -24,7 +22,8 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
     public string? Amount { get; set; }
 
     // API Call results
-    public Dictionary<string, List<BigInteger>>? Results;
+    public List<(string, BigDecimal)>? Results;
+    public BigDecimal? GasPrice;
 
     public void OnGet() 
     {
@@ -39,6 +38,13 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService, 
         }
 
         Results = await _quoteService.GetValueQuotes(TokenIn0, TokenIn1);
+        GasPrice = await _quoteService.GetGasPrice();
+        
+
+        var sellFirst = 1 * Results[0].Item2;
+        var unwrapped = sellFirst - GasPrice;
+        var sellSecond = unwrapped * Results[4].Item2;
+        var hope = sellSecond;
 
         return Page();
     }

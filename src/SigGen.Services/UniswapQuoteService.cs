@@ -13,6 +13,7 @@ using Nethereum.ABI;
 using Nethereum.Uniswap.V3.QuoterV2.ContractDefinition;
 using Microsoft.VisualBasic;
 using Nethereum.RPC.TransactionReceipts;
+using Nethereum.Util;
 
 namespace SigGen.Services;
 
@@ -24,6 +25,7 @@ public class UniswapQuoteService : IQuoteService
     private static readonly string zero = "0x0000000000000000000000000000000000000000";
     private readonly V4QuoterService _v4QuoterService;
     private readonly QuoterV2Service _quoterV2Service;
+    private static readonly decimal unit = 1000000000000000000M;
 
     public UniswapQuoteService(QuoteConfiguration configuration, ILogger<UniswapQuoteService> logger)
     {
@@ -39,34 +41,91 @@ public class UniswapQuoteService : IQuoteService
         _quoterV2Service = new QuoterV2Service(web3, UniswapAddresses.BaseQuoterV2);
     }
 
-    public async Task<BigInteger> GetExactQuoteV4(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
+    public async Task<List<(string, BigDecimal)>> GetExactQuoteV4(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
     {
         var pool = GetPool(tokenSymbolIn, tokenSymbolOut, meta);
         if (pool == null)
         {
-            return 0;
+            return [];
         }
+        var poolKey = new PoolKey
+        {
+            Currency0 = _configuration.Tokens[pool.Token0Name],
+            Currency1 = _configuration.Tokens[pool.Token1Name],
+            Fee = pool.Fee,
+            TickSpacing = pool.TickSpacing,
+            Hooks = zero,
+        };
 
-        var quoteExactParams = new QuoteExactSingleParams()
+        var results = new List<(string, BigDecimal)>();
+
+        // Given - calculates BID of DRB/ETH
+        // In = DRB
+        // Out = ETH
+        // Amount = 1 WEI
+        // Result = ETHWEI per 1 DRBWEI
+        var parms0 = new QuoteExactSingleParams
         {
             ExactAmount = amountIn,
-            PoolKey = new PoolKey
-            {
-                Currency0 = _configuration.Tokens[pool.Token0Name],
-                Currency1 = _configuration.Tokens[pool.Token1Name],
-                Fee = pool.Fee,
-                TickSpacing = pool.TickSpacing,
-                Hooks = zero,
-            },
-            ZeroForOne = pool.Token0Name == tokenSymbolIn,
+            PoolKey = poolKey,
+            ZeroForOne = true,
             HookData = zero.HexToByteArray(),
         };
-        var quote = await _v4QuoterService.QuoteExactInputSingleQueryAsync(quoteExactParams);
+        var quote0 = await _v4QuoterService.QuoteExactInputSingleQueryAsync(parms0);
+        var q0 = new BigDecimal(quote0.AmountOut)/unit;
+        results.Add(($"{tokenSymbolOut}/{tokenSymbolIn}-v4-bid", q0));
 
-        return quote.AmountOut;
+        // Given - calculates ASK of DRB/ETH
+        // In = ETH
+        // Out = DRB
+        // Amount = 1 DRBWEI
+        // Result = ETHWEI per 1 DRBWEI
+        var parms1 = new QuoteExactSingleParams
+        {
+            ExactAmount = amountIn,
+            PoolKey = poolKey,
+            ZeroForOne = false,
+            HookData = zero.HexToByteArray(),
+        };
+        var quote1 = await _v4QuoterService.QuoteExactOutputSingleQueryAsync(parms1);
+        var q1 = new BigDecimal(quote1.AmountIn)/unit;
+        results.Add(($"{tokenSymbolOut}/{tokenSymbolIn}-v4-ask", q1));
+
+        // Given - calculates BID of ETH/DRB
+        // In = ETH
+        // Out = DRB
+        // Amount = 1 WEI
+        // Result = DRBWEI per 1 ETHWEI
+        var parms2 = new QuoteExactSingleParams
+        {
+            ExactAmount = amountIn,
+            PoolKey = poolKey,
+            ZeroForOne = false,
+            HookData = zero.HexToByteArray(),
+        };
+        var quote2 = await _v4QuoterService.QuoteExactInputSingleQueryAsync(parms2);
+        var q2 = new BigDecimal(quote2.AmountOut)/unit;
+        results.Add(($"{tokenSymbolIn}/{tokenSymbolOut}-v4-bid", q2));
+
+        // Given - calculates ASK of ETH/DRB
+        // In = DRB
+        // Out = ETH
+        // Amount = 1 ETHWEI
+        // Result = DRBWEI per 1 ETHWEI
+        var parms3 = new QuoteExactSingleParams
+        {
+            ExactAmount = amountIn,
+            PoolKey = poolKey,
+            ZeroForOne = true,
+            HookData = zero.HexToByteArray(),
+        };
+        var quote3 = await _v4QuoterService.QuoteExactOutputSingleQueryAsync(parms3);
+        var q3 = new BigDecimal(quote3.AmountIn)/unit;
+        results.Add(($"{tokenSymbolIn}/{tokenSymbolOut}-v4-ask", q3));
+        return results;
     }
 
-    public async Task<List<(string, BigInteger)>> GetExactQuoteV2(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
+    public async Task<List<(string, BigDecimal)>> GetExactQuoteV2(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta)
     {
         var pool = GetPool(tokenSymbolIn, tokenSymbolOut, meta);
         if (pool == null)
@@ -75,7 +134,7 @@ public class UniswapQuoteService : IQuoteService
         }
         WrapEthIfEth(ref tokenSymbolIn, ref tokenSymbolOut);
 
-        var results = new List<(string, BigInteger)>();
+        var results = new List<(string, BigDecimal)>();
 
         // Given - calculates BID of DRB/ETH
         // In = DRB
@@ -90,7 +149,8 @@ public class UniswapQuoteService : IQuoteService
             TokenOut = _configuration.Tokens[tokenSymbolOut],
         };
         var quote0 = await _quoterV2Service.QuoteExactInputSingleQueryAsync(parms0);
-        results.Add(($"{tokenSymbolIn}/{tokenSymbolOut}-v2-bid", quote0.AmountOut));
+        var q0 = new BigDecimal(quote0.AmountOut)/unit;
+        results.Add(($"{tokenSymbolIn}/{tokenSymbolOut}-v2-bid", q0));
 
         // Given - calculates ASK of DRB/ETH
         // In = ETH
@@ -105,7 +165,8 @@ public class UniswapQuoteService : IQuoteService
             TokenOut = _configuration.Tokens[tokenSymbolIn],
         };
         var quote3 = await _quoterV2Service.QuoteExactOutputSingleQueryAsync(parms3);
-        results.Add(($"{tokenSymbolIn}/{tokenSymbolOut}-v2-ask", quote3.AmountIn));
+        var q3 = new BigDecimal(quote3.AmountIn)/unit;
+        results.Add(($"{tokenSymbolIn}/{tokenSymbolOut}-v2-ask", q3));
 
         // Given - calculates BID of ETH/DRB
         // In = ETH
@@ -120,7 +181,8 @@ public class UniswapQuoteService : IQuoteService
             TokenOut = _configuration.Tokens[tokenSymbolIn],
         };
         var quote1 = await _quoterV2Service.QuoteExactInputSingleQueryAsync(parms1);
-        results.Add(($"{tokenSymbolOut}/{tokenSymbolIn}-v2-bid", quote1.AmountOut));
+        var q1 = new BigDecimal(quote1.AmountOut)/unit;
+        results.Add(($"{tokenSymbolOut}/{tokenSymbolIn}-v2-bid", q1));
 
         // Given - calculates ASK of ETH/DRB
         // In = DRB
@@ -135,7 +197,8 @@ public class UniswapQuoteService : IQuoteService
             TokenOut = _configuration.Tokens[tokenSymbolOut],
         };
         var quote2 = await _quoterV2Service.QuoteExactOutputSingleQueryAsync(parms2);
-        results.Add(($"{tokenSymbolOut}/{tokenSymbolIn}-v2-ask", quote2.AmountIn));
+        var q2 = new BigDecimal(quote2.AmountIn)/unit;
+        results.Add(($"{tokenSymbolOut}/{tokenSymbolIn}-v2-ask", q2));
 
         return results;
     }
@@ -161,13 +224,21 @@ public class UniswapQuoteService : IQuoteService
         }
     }
 
-    public async Task<Dictionary<string, List<BigInteger>>> GetValueQuotes(string baseAsset, string quoteAsset)
+    public async Task<BigDecimal> GetGasPrice() 
     {
-        var results = new Dictionary<string, List<BigInteger>>();
+        var gasPrice = await web3.Eth.GasPrice.SendRequestAsync();
+        var g = new BigDecimal(gasPrice.Value) / unit;
+        return g;
+    }
+
+    public async Task<List<(string, BigDecimal)>> GetValueQuotes(string baseAsset, string quoteAsset)
+    {
+        var results = new List<(string, BigDecimal)>();
 
         try
         {
-            var prices = await GetExactQuoteV2(1000000000000000000, baseAsset, quoteAsset, "v3");
+            var prices = await GetExactQuoteV2((BigInteger)unit, baseAsset, quoteAsset, "v3");
+            results.AddRange(prices);
         }
         catch (Exception e)
         {
@@ -176,20 +247,8 @@ public class UniswapQuoteService : IQuoteService
 
         try
         {
-            var price1 = await GetExactQuoteV4(1, baseAsset, quoteAsset, "v4");
-            var price2 = await GetExactQuoteV4(1, quoteAsset, baseAsset, "v4");
-            BigInteger bid, ask;
-            if (price1 > price2)
-            {
-                ask = price1;
-                bid = price2;
-            }
-            else
-            {
-                ask = price2;
-                bid = price1;
-            }
-            results.Add("v4", [bid, ask]);
+            var prices = await GetExactQuoteV4((BigInteger)unit, baseAsset, quoteAsset, "v4");
+            results.AddRange(prices);
         }
         catch (Exception e)
         {

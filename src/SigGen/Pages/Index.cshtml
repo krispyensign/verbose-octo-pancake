@@ -40,6 +40,12 @@
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 <hr>
+@if(@Model.GasPrice != null)
+{
+    <div>
+        Gas Price: @Model.GasPrice
+    </div>
+}
 <table>
     <tr>
         <th>Pool Meta</th>
@@ -51,9 +57,8 @@
     @foreach (var b in @Model.Results)
     {
         <tr>
-            <td>@b.Key</td>
-            <td>@b.Value[0]</td>
-            <td>@b.Value[1]</td>
+            <td>@b.Item1</td>
+            <td>@b.Item2</td>
         </tr>
     }
 }
