@@ -4,7 +4,7 @@
     ViewData["Title"] = "Home page";
 }
 
-<meta http-equiv="refresh" content="30">
+@* <meta http-equiv="refresh" content="30"> *@
 <script type="text/javascript">
     let myDate = new Date();
     let myDay = myDate.getDay();
@@ -30,8 +30,10 @@
 <hr>
 <form method="post">
     <div class="form-group">
-        <label asp-for="Amount">Amount</label>
-        <input asp-for="Amount" class="form-control" />
+        <label asp-for="Amount0">Amount0</label>
+        <input asp-for="Amount0" class="form-control" />
+        <label asp-for="Amount1">Amount1</label>
+        <input asp-for="Amount1" class="form-control" />
         <label asp-for="TokenIn0">TokenIn0</label>
         <input asp-for="TokenIn0" class="form-control" />
         <label asp-for="TokenIn1">TokenIn1</label>
@@ -40,20 +42,21 @@
     <button type="submit" class="btn btn-primary">Submit</button>
 </form>
 <hr>
+
 @if(@Model.GasPrice != null)
 {
     <div>
         Gas Price: @Model.GasPrice
     </div>
 }
-<table>
-    <tr>
-        <th>Pool Meta</th>
-        <th>Bid</th>
-        <th>Ask</th>
-    </tr>
 @if(@Model.Results != null)
 {
+<table>
+        <tr>
+            <th>Pool Meta</th>
+            <th>Bid</th>
+            <th>Ask</th>
+        </tr>
     @foreach (var b in @Model.Results)
     {
         <tr>
@@ -61,5 +64,20 @@
             <td>@b.Item2</td>
         </tr>
     }
-}
 </table>
+}
+
+@if(@Model.ArbSellResults?.Count > 0)
+{
+<table>
+    <tr>
+        <th>Arb Sell Results</th>
+    </tr>
+    @foreach (var b in @Model.ArbSellResults)
+    {
+        <tr>
+            <td>@b</td>
+        </tr>
+    }
+</table>
+}

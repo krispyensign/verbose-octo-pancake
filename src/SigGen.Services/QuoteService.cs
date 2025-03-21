@@ -6,8 +6,7 @@ namespace SigGen.Services;
 
 public interface IQuoteService
 {
-    Task<List<(string, BigDecimal)>> GetExactQuoteV4(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta);
-    Task<List<(string, BigDecimal)>> GetExactQuoteV2(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta);
-    Task<List<(string, BigDecimal)>> GetValueQuotes(string baseAsset, string quoteAsset);
-    Task<BigDecimal> GetGasPrice();
+    Task<BigInteger> GetExactQuoteV4(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta);
+    Task<BigInteger> GetExactQuoteV2(BigInteger amountIn, string tokenSymbolIn, string tokenSymbolOut, string meta);
+    Task<BigInteger> GetGasPrice();
 }
