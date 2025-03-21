@@ -41,10 +41,10 @@ public class IndexModel(ILogger<IndexModel> logger, IQuoteService quoteService) 
         GasPrice = await _quoteService.GetGasPrice();
         
 
-        var sellFirst = 1 * Results[0].Item2;
-        var unwrapped = sellFirst - GasPrice;
-        var sellSecond = unwrapped * Results[4].Item2;
-        var hope = sellSecond;
+        // ETH => WETH => DRB => ETH
+        var sellFirst = (0.09 - GasPrice) * Results[2].Item2;
+        var sellSecond = sellFirst * Results[6].Item2;
+        var result = sellSecond - 0.09;
 
         return Page();
     }
